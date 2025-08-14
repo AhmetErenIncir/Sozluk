@@ -5,11 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useToast } from "@/components/ui/toast"
 import * as z from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { createBrowserSupabaseClient } from "@/lib/supabaseBrowser"
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -17,6 +19,8 @@ const formSchema = z.object({
 })
 
 export default function Login() {
+  const router = useRouter()
+  const { showToast, ToastContainer } = useToast()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -25,13 +29,30 @@ export default function Login() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-    // TODO: Implement login logic
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const supabase = createBrowserSupabaseClient()
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    })
+    if (error) {
+      if (error.message === 'Invalid login credentials') {
+        showToast('E-posta veya şifre hatalı. Lütfen tekrar deneyin.', 'error')
+      } else if (error.message === 'Email not confirmed') {
+        showToast('E-posta adresinizi doğrulamanız gerekiyor. Lütfen e-postanızdaki bağlantıyı kontrol edin.', 'warning')
+      } else {
+        console.error('Error logging in:', error.message)
+        showToast(`Giriş yapılırken hata: ${error.message}`, 'error')
+      }
+    } else {
+      showToast('Başarıyla giriş yaptınız!', 'success')
+      router.push('/')
+    }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <ToastContainer />
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Login</CardTitle>

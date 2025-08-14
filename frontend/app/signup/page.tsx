@@ -5,11 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useToast } from "@/components/ui/toast"
 import * as z from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { createBrowserSupabaseClient } from "@/lib/supabaseBrowser"
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -21,6 +23,8 @@ const formSchema = z.object({
 })
 
 export default function Signup() {
+  const router = useRouter()
+  const { showToast, ToastContainer } = useToast()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -30,13 +34,29 @@ export default function Signup() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-    // TODO: Implement signup logic
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const supabase = createBrowserSupabaseClient()
+    const { data, error } = await supabase.auth.signUp({
+      email: values.email,
+      password: values.password,
+    })
+    if (error) {
+      console.error('Error signing up:', error.message)
+      showToast(`Kayıt olurken hata: ${error.message}`, 'error')
+    } else if (data.session) {
+      // User is signed in immediately (email confirmations disabled)
+      showToast('Başarıyla kayıt oldunuz!', 'success')
+      router.push('/')
+    } else {
+      // Email confirmation required
+      showToast('Kayıt başarılı! E-posta adresinizi doğrulamak için lütfen gelen kutunuzu kontrol edin.', 'info')
+      router.push('/login')
+    }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <ToastContainer />
       <Card className="w-[350px]">
         <CardHeader>
           <CardTitle>Sign Up</CardTitle>

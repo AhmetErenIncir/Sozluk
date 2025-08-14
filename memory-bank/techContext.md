@@ -10,6 +10,8 @@
   - react-hook-form: Latest (for form handling)
   - @hookform/resolvers: Latest (for form validation integration)
   - zod: Latest (for schema validation)
+  - @supabase/supabase-js: Latest (for Supabase integration)
+  - @supabase/ssr: Latest (for server-side rendering compatible Supabase clients)
 - **Backend**: (To be determined, potential candidates include Node.js with Express/NestJS, Python with Django/FastAPI)
 - **Database**: (To be determined, potential candidates include PostgreSQL, MongoDB, SQLite)
 
