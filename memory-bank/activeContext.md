@@ -1,16 +1,16 @@
 # Active Context
 ## Plan (current)
-- **Goal**: Add Login and Sign Up buttons to the top left of the landing page navigation bar (next to the logo), and create dedicated login and signup pages with forms that users navigate to upon clicking the buttons.
+- **Goal**: Integrate Supabase Auth for managing user identity processes (signup, login, session management) in the frontend, connecting to the existing login/signup forms.
 - **Acceptance Criteria**:
-  - Login and Sign Up buttons are visible on the left side of the nav bar.
-  - Clicking Login navigates to /login page with a form (email, password, submit).
-  - Clicking Sign Up navigates to /signup page with a form (email, password, confirm password, submit).
-  - Forms use Shadcn UI components for consistency.
-  - Navigation works without errors, and UI is responsive.
+  - Successful signup and login via Supabase, with session persistence.
+  - Protected routes and auth state management in Next.js.
+  - Error handling for auth flows (e.g., invalid credentials).
+  - Updated documentation in techContext.md and systemPatterns.md.
 - **Risks**: 
-  - Potential styling conflicts in the nav bar layout.
-  - Need to add additional Shadcn components if not already installed (e.g., form, label).
-- **Deliverables**: Updated page.tsx with buttons, new login.tsx and signup.tsx pages.
+  - API key security; ensure environment variables are used.
+  - Integration with existing forms; may require adjustments to form handling.
+  - Potential conflicts with Next.js SSR vs. client-side auth.
+- **Deliverables**: Supabase setup, auth hooks in forms, protected pages, updated memory-bank files.
 
 ## Recent Changes
 - Initial setup of the dictionary project, including `frontend` and `backend` directories.
