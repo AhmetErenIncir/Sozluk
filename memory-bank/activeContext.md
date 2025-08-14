@@ -1,14 +1,16 @@
 # Active Context
 ## Plan (current)
-- **Goal**: To establish a robust project context management system using the `memory-bank/` directory as the single source of truth for all project-related information.
+- **Goal**: Add Login and Sign Up buttons to the top left of the landing page navigation bar (next to the logo), and create dedicated login and signup pages with forms that users navigate to upon clicking the buttons.
 - **Acceptance Criteria**:
-  - The `memory-bank/` directory is created at the project root.
-  - All required core `memory-bank` files (`projectbrief.md`, `productContext.md`, `systemPatterns.md`, `techContext.md`, `activeContext.md`, `progress.md`) are created with initial content based on the provided templates and current project status.
-  - The content of these files accurately reflects the current state and plan of the Sözlük project.
+  - Login and Sign Up buttons are visible on the left side of the nav bar.
+  - Clicking Login navigates to /login page with a form (email, password, submit).
+  - Clicking Sign Up navigates to /signup page with a form (email, password, confirm password, submit).
+  - Forms use Shadcn UI components for consistency.
+  - Navigation works without errors, and UI is responsive.
 - **Risks**: 
-  - Incomplete or inaccurate initial documentation.
-  - Overlooking critical project details during initial context creation.
-- **Deliverables**: Populated `memory-bank/` directory with initial project context files.
+  - Potential styling conflicts in the nav bar layout.
+  - Need to add additional Shadcn components if not already installed (e.g., form, label).
+- **Deliverables**: Updated page.tsx with buttons, new login.tsx and signup.tsx pages.
 
 ## Recent Changes
 - Initial setup of the dictionary project, including `frontend` and `backend` directories.
