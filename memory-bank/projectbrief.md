@@ -1,6 +1,6 @@
 # Project Brief
 ## Purpose & Vision
-- This project aims to create a comprehensive dictionary application, named "Sözlük", with a clear separation between its frontend and backend components. The vision is to provide users with a fast, reliable, and feature-rich platform for exploring word meanings, translations, and linguistic insights across multiple languages.
+- This project aims to create a comprehensive dictionary application, named "Sozluk", with a clear separation between its frontend and backend components. The vision is to provide users with a fast, reliable, and feature-rich platform for exploring word meanings, translations, and linguistic insights across multiple languages.
 
 ## Scope & Boundaries
 - Included: 

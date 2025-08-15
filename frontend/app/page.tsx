@@ -27,7 +27,7 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">Sözlük</span>
+              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">Sozluk</span>
               {session ? (
                 <div className="flex items-center space-x-2">
                   <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
@@ -162,7 +162,7 @@ export default function Home() {
             Ready to Expand Your Vocabulary?
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-            Join thousands of learners who trust Sözlük for their language journey.
+            Join thousands of learners who trust Sozluk for their language journey.
           </p>
           <Button size="lg" className="text-lg px-8">
             Get Started Free
@@ -173,7 +173,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-gray-700 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center text-gray-600 dark:text-gray-400">
-          <p>&copy; 2025 Sözlük. Built with Next.js and Shadcn UI.</p>
+          <p>&copy; 2025 Sozluk. Built with Next.js and Shadcn UI.</p>
         </div>
       </footer>
     </div>
