@@ -15,8 +15,14 @@ export default function Home() {
 
   const handleLogout = async () => {
     const supabase = createBrowserSupabaseClient()
-    await supabase.auth.signOut()
-    router.refresh()
+    try {
+      await supabase.auth.signOut()
+      router.refresh()
+    } catch (error) {
+      // Handle cases where there's no active session or network issues
+      console.warn('Logout error:', error)
+      router.refresh()
+    }
   }
 
   return (

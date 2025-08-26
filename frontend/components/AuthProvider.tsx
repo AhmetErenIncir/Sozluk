@@ -21,6 +21,11 @@ export function AuthProvider({ children, session: initialSession }: { children: 
       setSession(session)
     })
 
+    // Ensure we have an initial session even if onAuthStateChange didn't fire
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+
     return () => subscription.unsubscribe()
   }, [])
 
