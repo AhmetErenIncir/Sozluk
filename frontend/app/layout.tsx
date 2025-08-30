@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 import { createServerSupabaseClient } from "@/lib/supabase";
+import Navbar from "@/components/Navbar";
 
 export default async function RootLayout({
   children,
@@ -35,6 +36,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased}`}
       >
         <AuthProvider session={session}>
+          <Navbar />
           {children}
         </AuthProvider>
       </body>

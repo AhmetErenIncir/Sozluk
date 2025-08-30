@@ -1,17 +1,29 @@
 # Active Context
 ## Plan (completed)
-- **Goal**: Implement admin role identification using Supabase without a separate login page by adding an 'is_admin' flag and checking it post-login.
+- **Goal**: Fix logout operation by adding session check to prevent ERR_ABORTED errors.
 - **Acceptance Criteria**:
-  - Users can log in normally.
-  - After login, fetch profile to check 'is_admin' and store in context.
-  - Enable admin features based on role.
-  - Update memory-bank files accordingly.
+  - Logout works when session exists.
+  - Gracefully handles no session case.
+  - No ERR_ABORTED errors on logout.
 - **Risks**:  
-  - Security: Ensure admin checks are secure.
-  - Performance: Additional query after login.
-- **Deliverables**: Updated AuthProvider with role, login page with profile fetch, admin logic in UI.
+  - Ensure refresh happens correctly.
+- **Deliverables**: Updated page.tsx with session check.
+
+## Plan (completed)
+- **Goal**: Fix auto-signin issue where users appear signed in on first page load.
+- **Acceptance Criteria**:
+  - Authenticated users are redirected from login/signup pages.
+  - Login/signup pages only accessible to unauthenticated users.
+  - Proper handling of existing sessions.
+- **Risks**:  
+  - Ensure redirect doesn't cause infinite loops.
+- **Deliverables**: Updated login and signup pages with redirect logic.
 
 ## Recent Changes
+- **2025-01-16**: Added email column to profiles table - Enhanced profiles table with email field for better admin management, updated existing users' email data, and modified trigger to include email for new users
+- **2025-01-16**: Migrated existing users to profiles table - Successfully transferred 2 users from Authentication to profiles table with default is_admin=false setting
+- **2025-01-16**: Fixed logout button unresponsiveness - Updated `handleLogout` function in `frontend/app/page.tsx` to improve error handling, add explicit error logging, and include redirect after logout
+- **2025-01-16**: Added redirect functionality for authenticated users in login and signup pages to prevent auto-signin issues
 - Initial setup of the dictionary project, including `frontend` and `backend` directories.
 - Next.js application initialized in `frontend` with TypeScript and Tailwind CSS.
 - Shadcn UI configured and essential components (button, card, input) added.

@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createBrowserSupabaseClient } from "@/lib/supabaseBrowser"
+import { useEffect } from "react"
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -28,6 +29,18 @@ export default function Login() {
       password: "",
     },
   })
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createBrowserSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push('/')
+      }
+    }
+    checkAuth()
+  }, [router])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const supabase = createBrowserSupabaseClient()

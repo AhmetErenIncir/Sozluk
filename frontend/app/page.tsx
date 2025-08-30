@@ -3,71 +3,16 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, BookOpen, Globe, Zap, User, LogOut } from "lucide-react"
-import Link from "next/link"
+import { Search, Globe, Zap } from "lucide-react"
 import { useAuth } from "@/components/AuthProvider"
-import { createBrowserSupabaseClient } from "@/lib/supabaseBrowser"
-import { useRouter } from "next/navigation"
 
 export default function Home() {
-  const { session, user } = useAuth()
-  const router = useRouter()
+  const { session, user, isAdmin } = useAuth()
 
-  const handleLogout = async () => {
-    const supabase = createBrowserSupabaseClient()
-    try {
-      await supabase.auth.signOut()
-      router.refresh()
-    } catch (error) {
-      // Handle cases where there's no active session or network issues
-      console.warn('Logout error:', error)
-      router.refresh()
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      {/* Navigation */}
-      <nav className="border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">Sozluk</span>
-              {session ? (
-                <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    {user?.email}
-                  </span>
-                  <Button variant="ghost" onClick={handleLogout} className="flex items-center space-x-1">
-                    <LogOut className="h-4 w-4" />
-                    <span>Çıkış</span>
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <Link href="/login">
-                    <Button variant="ghost">Giriş</Button>
-                  </Link>
-                  <Link href="/signup">
-                    <Button variant="ghost">Kayıt Ol</Button>
-                  </Link>
-                </>
-              )}
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" className="text-gray-600 dark:text-gray-300">
-                Features
-              </Button>
-              <Button variant="ghost" className="text-gray-600 dark:text-gray-300">
-                About
-              </Button>
-              <Button>Get Started</Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+
 
       {/* Hero Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
@@ -146,9 +91,7 @@ export default function Home() {
 
             <Card className="text-center">
               <CardHeader>
-                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                </div>
+                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4"></div>
                 <CardTitle>Rich Content</CardTitle>
               </CardHeader>
               <CardContent>
