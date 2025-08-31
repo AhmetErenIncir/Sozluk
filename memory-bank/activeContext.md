@@ -24,6 +24,11 @@
 - **2025-01-16**: Migrated existing users to profiles table - Successfully transferred 2 users from Authentication to profiles table with default is_admin=false setting
 - **2025-01-16**: Fixed logout button unresponsiveness - Updated `handleLogout` function in `frontend/app/page.tsx` to improve error handling, add explicit error logging, and include redirect after logout
 - **2025-01-16**: Added redirect functionality for authenticated users in login and signup pages to prevent auto-signin issues
+- **2025-01-16**: Modified `Navbar.tsx` to ensure "Kelime Ekle" button visibility for admin users by explicitly checking `isAdmin === true`.
+- **2025-01-16**: Moved "Ana Sayfa" button to the left of "Giriş" button in `Navbar.tsx`.
+- **2025-01-16**: Modified `Navbar.tsx` to make "Ana Sayfa" button visible only after login and positioned it to the left of the username/email button.
+- **2025-01-16**: Wrapped `BookOpen` icon and "Sozluk" text in `Navbar.tsx` with a `Link` component to navigate to the home page.
+- **2025-01-16**: Removed "Ana Sayfa" button from `Navbar.tsx`.
 - Initial setup of the dictionary project, including `frontend` and `backend` directories.
 - Next.js application initialized in `frontend` with TypeScript and Tailwind CSS.
 - Shadcn UI configured and essential components (button, card, input) added.

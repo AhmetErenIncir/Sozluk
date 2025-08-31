@@ -34,14 +34,11 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            <Link href="/">
-              <Button variant="ghost" className="flex items-center space-x-2">
-                <HomeIcon className="h-5 w-5" />
-                <span>Ana Sayfa</span>
-              </Button>
+
+            <Link href="/" className="flex items-center space-x-2">
+              <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">Sozluk</span>
             </Link>
-            <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">Sozluk</span>
             {session ? (
               <div className="flex items-center space-x-2">
                 <User className="h-5 w-5 text-gray-600 dark:text-gray-300" />
@@ -60,6 +57,7 @@ export default function Navbar() {
               </div>
             ) : (
               <>
+
                 <Link href="/login">
                   <Button variant="ghost">Giriş</Button>
                 </Link>
