@@ -13,10 +13,10 @@
 - **Broken**: None currently.
 
 ## To-Do
-- [P1] @TraeAI Complete `memory-bank/` initialization by creating `progress.md`.
-- [P1] @TraeAI Begin backend setup and define initial API structure.
-- [P2] @TraeAI Implement core dictionary search logic in the frontend.
-- [P2] @TraeAI Integrate frontend with backend API for data fetching.
+- [P1] Implement word adding functionality for admin users.
+- [P2] Implement word search functionality.
+- [P3] Implement user profile page.
+- [P4] Implement admin dashboard.
 
 ## Known Issues
 - None currently.
