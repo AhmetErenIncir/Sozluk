@@ -6,7 +6,7 @@ import { Session } from "@supabase/supabase-js"
 
 type AuthContextType = {
   session: Session | null
-  user: Session['user'] | undefined
+  user: Session['user'] | null
   isAdmin: boolean | null
 }
 
@@ -14,53 +14,112 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children, session: initialSession }: { children: ReactNode, session: Session | null }) {
   const [session, setSession] = useState<Session | null>(initialSession)
+  const [user, setUser] = useState<Session['user'] | null>(null)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
 
+  console.log('🔍 AuthProvider render - session:', !!session, 'user:', !!user, 'isAdmin:', isAdmin)
+
   useEffect(() => {
+    console.log('🚀 AuthProvider useEffect started')
     const supabase = createBrowserSupabaseClient()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state changed:', event, 'Session exists:', !!session)
       setSession(session)
       if (session) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single()
-        if (error) {
-          console.error('Error fetching profile:', error)
+        console.log('👤 Session found, getting user...')
+        try {
+          const { data: { user }, error: userError } = await supabase.auth.getUser()
+          if (userError || !user) {
+            console.warn('❌ Error getting user:', userError)
+            setUser(null)
+            setIsAdmin(null)
+            return
+          }
+          
+          console.log('✅ User found:', user.id, user.email)
+          setUser(user)
+          
+          console.log('🔍 Fetching profile for user:', user.id)
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .maybeSingle()
+          
+          console.log('📊 Profile query result - data:', data, 'error:', error)
+          
+          if (error) {
+            console.warn('⚠️ AuthProvider: Error fetching profile:', error)
+            setIsAdmin(false)
+          } else if (!data) {
+            console.log('❌ No profile found for user')
+            setIsAdmin(false)
+          } else {
+            console.log('✅ Profile found, is_admin:', data.is_admin)
+            setIsAdmin(data.is_admin === true)
+          }
+        } catch (err) {
+          console.warn('💥 AuthProvider: Unexpected error:', err)
           setIsAdmin(false)
-        } else {
-          setIsAdmin(data.is_admin)
         }
       } else {
+        console.log('🚫 No session, clearing user data')
+        setUser(null)
         setIsAdmin(null)
       }
     })
 
-    // Ensure we have an initial session even if onAuthStateChange didn't fire
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session)
-      if (session) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single()
-        if (error) {
-          console.error('Error fetching profile:', error)
-          setIsAdmin(false)
-        } else {
-          setIsAdmin(data.is_admin)
+    const initializeAuth = async () => {
+      console.log('🔧 Initializing auth...')
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        console.log('📋 Initial session check:', !!session)
+        setSession(session)
+        if (session) {
+          const { data: { user }, error: userError } = await supabase.auth.getUser()
+          if (userError || !user) {
+            console.warn('❌ Init: Error getting user:', userError)
+            setUser(null)
+            setIsAdmin(null)
+            return
+          }
+          
+          console.log('✅ Init: User found:', user.id, user.email)
+          setUser(user)
+          
+          console.log('🔍 Init: Fetching profile for user:', user.id)
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', user.id)
+            .maybeSingle()
+          
+          console.log('📊 Init: Profile query result - data:', data, 'error:', error)
+          
+          if (error) {
+            console.warn('⚠️ AuthProvider:init: Error fetching profile:', error)
+            setIsAdmin(false)
+          } else if (!data) {
+            console.log('❌ Init: No profile found for user')
+            setIsAdmin(false)
+          } else {
+            console.log('✅ Init: Profile found, is_admin:', data.is_admin)
+            setIsAdmin(data.is_admin === true)
+          }
         }
+      } catch (err) {
+        console.warn('💥 AuthProvider:init: Error initializing auth:', err)
       }
-    })
+    }
+    
+    initializeAuth()
 
     return () => subscription.unsubscribe()
   }, [])
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user, isAdmin }}>
+    <AuthContext.Provider value={{ session, user, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )
