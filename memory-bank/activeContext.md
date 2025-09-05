@@ -1,25 +1,29 @@
 # Active Context
+
 ## Plan (completed)
+
 - **Goal**: Fix logout operation by adding session check to prevent ERR_ABORTED errors.
 - **Acceptance Criteria**:
   - Logout works when session exists.
   - Gracefully handles no session case.
   - No ERR_ABORTED errors on logout.
-- **Risks**:  
+- **Risks**:
   - Ensure refresh happens correctly.
 - **Deliverables**: Updated page.tsx with session check.
 
 ## Plan (completed)
+
 - **Goal**: Fix auto-signin issue where users appear signed in on first page load.
 - **Acceptance Criteria**:
   - Authenticated users are redirected from login/signup pages.
   - Login/signup pages only accessible to unauthenticated users.
   - Proper handling of existing sessions.
-- **Risks**:  
+- **Risks**:
   - Ensure redirect doesn't cause infinite loops.
 - **Deliverables**: Updated login and signup pages with redirect logic.
 
 ## Recent Changes
+
 - **2025-01-16**: Implemented "Kelime Ekle" (Add Word) functionality:
   - Created `dictionary` table in Supabase with columns: word, meaning, created_by, created_by_username, related_words, language, part_of_speech, example_sentences, etymology, pronunciation
   - Enhanced Add Word page (`/add-word`) with complete form fields and Supabase integration
@@ -47,19 +51,23 @@
 - Updated AuthProvider to fetch and provide isAdmin in context.
 
 ## Decisions
+
 - **Decision**: Implement a `memory-bank/` directory for project context management.
   - **Rationale**: Centralizes project knowledge, ensures consistency, and provides a clear reference for all team members and future development.
   - **Impact**: Improves project understanding, reduces onboarding time, and facilitates more efficient development cycles.
   - **Risks**: Requires diligent maintenance to keep information up-to-date.
 
 ## Open Questions & Assumptions
-- **Open Questions**: 
+
+- **Open Questions**:
   - What specific database technology will be used for the backend?
   - What backend framework will be chosen (e.g., Node.js, Python, Go)?
   - Detailed API specifications for frontend-backend communication.
-- **Assumptions**: 
+- **Assumptions**:
   - The project will continue to use Next.js for the frontend.
   - Tailwind CSS and Shadcn UI will remain the primary styling and UI component libraries.
+  - Supabase will continue to be used for authentication and database management.
 
 ## Changelog
+
 - 2024-07-30: Created.
