@@ -3,44 +3,290 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect } from "react"
+import { createBrowserSupabaseClient } from "@/lib/supabaseBrowser"
+import { useAuth } from "@/components/AuthProvider"
+import { useRouter } from "next/navigation"
+import { AlertCircle, CheckCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function AddWord() {
+  const { session, user, isAdmin } = useAuth()
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  
+  // Form fields
   const [word, setWord] = useState('')
   const [meaning, setMeaning] = useState('')
+  const [relatedWords, setRelatedWords] = useState('')
+  const [language, setLanguage] = useState('tr')
+  const [partOfSpeech, setPartOfSpeech] = useState('')
+  const [exampleSentences, setExampleSentences] = useState('')
+  const [etymology, setEtymology] = useState('')
+  const [pronunciation, setPronunciation] = useState('')
 
-  const handleSave = () => {
-    // For now, just log to console since no DB yet
-    console.log({ word, meaning })
-    // Optionally, clear fields or show success message
-    setWord('')
-    setMeaning('')
+  // Check if user is admin on mount
+  useEffect(() => {
+    if (session && !isAdmin) {
+      router.push('/')
+    }
+  }, [session, isAdmin, router])
+
+  const handleSave = async () => {
+    console.log('handleSave called')
+    
+    // Validation
+    if (!word.trim() || !meaning.trim()) {
+      setError('Kelime ve anlam alanları zorunludur!')
+      return
+    }
+
+    // Check if user is authenticated
+    if (!user?.id) {
+      setError('Lütfen önce giriş yapın!')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    setSuccess(false)
+
+    const supabase = createBrowserSupabaseClient()
+
+    try {
+      console.log('User ID:', user?.id)
+      console.log('User Email:', user?.email)
+      
+      // Prepare data for insertion
+      const dictionaryEntry = {
+        word: word.trim(),
+        meaning: meaning.trim(),
+        created_by: user.id,
+        created_by_username: user.email?.split('@')[0] || user.email || 'unknown',
+        related_words: relatedWords ? relatedWords.split(',').map(w => w.trim()).filter(w => w) : [],
+        language,
+        part_of_speech: partOfSpeech || null,
+        example_sentences: exampleSentences ? exampleSentences.split('\n').map(s => s.trim()).filter(s => s) : [],
+        etymology: etymology || null,
+        pronunciation: pronunciation || null
+      }
+
+      console.log('Dictionary entry to save:', dictionaryEntry)
+
+      const { data, error: dbError } = await supabase
+        .from('dictionary')
+        .insert([dictionaryEntry])
+        .select()
+
+      console.log('Supabase response - Data:', data)
+      console.log('Supabase response - Error:', dbError)
+
+      if (dbError) {
+        console.error('Database error details:', dbError)
+        if (dbError.code === '42501') {
+          setError('Yetki hatası: Bu işlemi gerçekleştirmek için yetkiniz yok.')
+        } else if (dbError.code === '23505') {
+          setError('Bu kelime zaten eklenmiş.')
+        } else {
+          setError(`Kelime kaydedilirken bir hata oluştu: ${dbError.message}`)
+        }
+      } else if (data && data.length > 0) {
+        console.log('Successfully saved:', data)
+        setSuccess(true)
+        // Clear form
+        setWord('')
+        setMeaning('')
+        setRelatedWords('')
+        setLanguage('tr')
+        setPartOfSpeech('')
+        setExampleSentences('')
+        setEtymology('')
+        setPronunciation('')
+        
+        // Show success message for 3 seconds
+        setTimeout(() => {
+          setSuccess(false)
+        }, 3000)
+      } else {
+        console.log('No data returned from insert')
+        setError('Veri kaydedildi gibi görünüyor ancak doğrulama yapılamadı.')
+      }
+    } catch (err: any) {
+      console.error('Unexpected error:', err)
+      setError(`Beklenmeyen bir hata oluştu: ${err.message || 'Bilinmeyen hata'}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle>Kelime Ekle</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            placeholder="Kelime"
-            value={word}
-            onChange={(e) => setWord(e.target.value)}
-          />
-          <Textarea
-            placeholder="Anlamı"
-            value={meaning}
-            onChange={(e) => setMeaning(e.target.value)}
-            rows={5}
-          />
-          <Button onClick={handleSave} className="w-full">
-            Kaydet
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="max-w-3xl mx-auto px-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Yeni Kelime Ekle</CardTitle>
+            <CardDescription>
+              Sözlüğe yeni bir kelime ve tanımı ekleyin
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Success Alert */}
+            {success && (
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Kelime başarıyla kaydedildi!
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Error Alert */}
+            {error && (
+              <Alert className="bg-red-50 border-red-200">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Main Fields */}
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="word">Kelime *</Label>
+                <Input
+                  id="word"
+                  placeholder="Örn: Kitap"
+                  value={word}
+                  onChange={(e) => setWord(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="meaning">Anlam *</Label>
+                <Textarea
+                  id="meaning"
+                  placeholder="Kelimenin anlamını yazın..."
+                  value={meaning}
+                  onChange={(e) => setMeaning(e.target.value)}
+                  rows={3}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="language">Dil</Label>
+                  <Select value={language} onValueChange={setLanguage} disabled={loading}>
+                    <SelectTrigger id="language">
+                      <SelectValue placeholder="Dil seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tr">Türkçe</SelectItem>
+                      <SelectItem value="en">İngilizce</SelectItem>
+                      <SelectItem value="de">Almanca</SelectItem>
+                      <SelectItem value="fr">Fransızca</SelectItem>
+                      <SelectItem value="es">İspanyolca</SelectItem>
+                      <SelectItem value="ar">Arapça</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="partOfSpeech">Kelime Türü</Label>
+                  <Select value={partOfSpeech} onValueChange={setPartOfSpeech} disabled={loading}>
+                    <SelectTrigger id="partOfSpeech">
+                      <SelectValue placeholder="Kelime türü seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="isim">İsim</SelectItem>
+                      <SelectItem value="fiil">Fiil</SelectItem>
+                      <SelectItem value="sıfat">Sıfat</SelectItem>
+                      <SelectItem value="zarf">Zarf</SelectItem>
+                      <SelectItem value="zamir">Zamir</SelectItem>
+                      <SelectItem value="edat">Edat</SelectItem>
+                      <SelectItem value="bağlaç">Bağlaç</SelectItem>
+                      <SelectItem value="ünlem">Ünlem</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pronunciation">Telaffuz</Label>
+                <Input
+                  id="pronunciation"
+                  placeholder="Örn: ki-tap"
+                  value={pronunciation}
+                  onChange={(e) => setPronunciation(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="relatedWords">İlgili Kelimeler</Label>
+                <Input
+                  id="relatedWords"
+                  placeholder="Virgülle ayırın: okuma, kütüphane, sayfa"
+                  value={relatedWords}
+                  onChange={(e) => setRelatedWords(e.target.value)}
+                  disabled={loading}
+                />
+                <p className="text-sm text-gray-500">Virgül ile ayırarak birden fazla kelime ekleyebilirsiniz</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="exampleSentences">Örnek Cümleler</Label>
+                <Textarea
+                  id="exampleSentences"
+                  placeholder="Her satıra bir örnek cümle yazın..."
+                  value={exampleSentences}
+                  onChange={(e) => setExampleSentences(e.target.value)}
+                  rows={3}
+                  disabled={loading}
+                />
+                <p className="text-sm text-gray-500">Her satıra bir örnek cümle yazın</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="etymology">Köken/Etimoloji</Label>
+                <Textarea
+                  id="etymology"
+                  placeholder="Kelimenin kökeni hakkında bilgi..."
+                  value={etymology}
+                  onChange={(e) => setEtymology(e.target.value)}
+                  rows={2}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <Button 
+                onClick={handleSave} 
+                className="flex-1"
+                disabled={loading}
+              >
+                {loading ? 'Kaydediliyor...' : 'Kaydet'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => router.push('/')}
+                disabled={loading}
+              >
+                İptal
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

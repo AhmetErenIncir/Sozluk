@@ -20,6 +20,13 @@
 - **Deliverables**: Updated login and signup pages with redirect logic.
 
 ## Recent Changes
+- **2025-01-16**: Implemented "Kelime Ekle" (Add Word) functionality:
+  - Created `dictionary` table in Supabase with columns: word, meaning, created_by, created_by_username, related_words, language, part_of_speech, example_sentences, etymology, pronunciation
+  - Enhanced Add Word page (`/add-word`) with complete form fields and Supabase integration
+  - Added comprehensive validation and error handling
+  - Implemented successful save functionality to store words in database
+  - Added UI components: Select, Alert, Label via shadcn
+  - Restricted access to admin users only with automatic redirect for non-admins
 - **2025-01-16**: Added email column to profiles table - Enhanced profiles table with email field for better admin management, updated existing users' email data, and modified trigger to include email for new users
 - **2025-01-16**: Migrated existing users to profiles table - Successfully transferred 2 users from Authentication to profiles table with default is_admin=false setting
 - **2025-01-16**: Fixed logout button unresponsiveness - Updated `handleLogout` function in `frontend/app/page.tsx` to improve error handling, add explicit error logging, and include redirect after logout
