@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
-import { createBrowserSupabaseClient } from "@/lib/supabaseBrowser"
 import { useAuth } from "@/components/AuthProvider"
 import { useRouter } from "next/navigation"
 import { AlertCircle, CheckCircle } from "lucide-react"
@@ -57,18 +56,14 @@ export default function AddWord() {
     setError('')
     setSuccess(false)
 
-    const supabase = createBrowserSupabaseClient()
-
     try {
       console.log('User ID:', user?.id)
       console.log('User Email:', user?.email)
       
-      // Prepare data for insertion
+      // Prepare data for API request
       const dictionaryEntry = {
         word: word.trim(),
         meaning: meaning.trim(),
-        created_by: user.id,
-        created_by_username: user.email?.split('@')[0] || user.email || 'unknown',
         related_words: relatedWords || [],
         language,
         part_of_speech: partOfSpeech || null,
@@ -79,25 +74,32 @@ export default function AddWord() {
 
       console.log('Dictionary entry to save:', dictionaryEntry)
 
-      const { data, error: dbError } = await supabase
-        .from('dictionary')
-        .insert([dictionaryEntry])
-        .select()
+      // Use API route instead of direct Supabase call
+      const response = await fetch('/api/dictionary/words', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dictionaryEntry),
+      })
 
-      console.log('Supabase response - Data:', data)
-      console.log('Supabase response - Error:', dbError)
+      const result = await response.json()
 
-      if (dbError) {
-        console.error('Database error details:', dbError)
-        if (dbError.code === '42501') {
+      console.log('API response:', result)
+
+      if (!response.ok) {
+        console.error('API error details:', result)
+        if (response.status === 401) {
+          setError('Lütfen önce giriş yapın!')
+        } else if (response.status === 403) {
           setError('Yetki hatası: Bu işlemi gerçekleştirmek için yetkiniz yok.')
-        } else if (dbError.code === '23505') {
+        } else if (response.status === 409) {
           setError('Bu kelime zaten eklenmiş.')
         } else {
-          setError(`Kelime kaydedilirken bir hata oluştu: ${dbError.message}`)
+          setError(`Kelime kaydedilirken bir hata oluştu: ${result.error || 'Bilinmeyen hata'}`)
         }
-      } else if (data && data.length > 0) {
-        console.log('Successfully saved:', data)
+      } else if (result.success) {
+        console.log('Successfully saved:', result.data)
         setSuccess(true)
         // Clear form
         setWord('')
@@ -114,7 +116,7 @@ export default function AddWord() {
           setSuccess(false)
         }, 3000)
       } else {
-        console.log('No data returned from insert')
+        console.log('No success in response')
         setError('Veri kaydedildi gibi görünüyor ancak doğrulama yapılamadı.')
       }
     } catch (err: any) {
