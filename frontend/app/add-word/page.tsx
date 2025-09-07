@@ -119,9 +119,10 @@ export default function AddWord() {
         console.log('No success in response')
         setError('Veri kaydedildi gibi görünüyor ancak doğrulama yapılamadı.')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Unexpected error:', err)
-      setError(`Beklenmeyen bir hata oluştu: ${err.message || 'Bilinmeyen hata'}`)
+      const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata'
+      setError(`Beklenmeyen bir hata oluştu: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
