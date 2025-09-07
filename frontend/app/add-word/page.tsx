@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RelatedWordsSelect } from "@/components/RelatedWordsSelect"
 
 export default function AddWord() {
-  const { session, user, isAdmin } = useAuth()
+  const { session, user, isAdmin, refreshSession } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -69,7 +69,9 @@ export default function AddWord() {
         part_of_speech: partOfSpeech || null,
         example_sentences: exampleSentences ? exampleSentences.split('\n').map(s => s.trim()).filter(s => s) : [],
         etymology: etymology || null,
-        pronunciation: pronunciation || null
+        pronunciation: pronunciation || null,
+        user_id: user.id,
+        user_email: user.email
       }
 
       console.log('Dictionary entry to save:', dictionaryEntry)
@@ -91,6 +93,10 @@ export default function AddWord() {
         console.error('API error details:', result)
         if (response.status === 401) {
           setError('Lütfen önce giriş yapın!')
+          // If unauthorized, redirect to login
+          setTimeout(() => {
+            router.push('/login')
+          }, 2000)
         } else if (response.status === 403) {
           setError('Yetki hatası: Bu işlemi gerçekleştirmek için yetkiniz yok.')
         } else if (response.status === 409) {
@@ -110,11 +116,14 @@ export default function AddWord() {
         setExampleSentences('')
         setEtymology('')
         setPronunciation('')
-        
+
         // Show success message for 3 seconds
         setTimeout(() => {
           setSuccess(false)
         }, 3000)
+
+        // Refresh session to ensure auth state is clean
+        await refreshSession()
       } else {
         console.log('No success in response')
         setError('Veri kaydedildi gibi görünüyor ancak doğrulama yapılamadı.')

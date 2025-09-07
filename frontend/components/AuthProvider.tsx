@@ -10,7 +10,7 @@ type AuthContextType = {
   isAdmin: boolean | null
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType & { refreshSession: () => Promise<void> } | undefined>(undefined)
 
 export function AuthProvider({ children, session: initialSession }: { children: ReactNode, session: Session | null }) {
   const [session, setSession] = useState<Session | null>(initialSession)
@@ -24,7 +24,7 @@ export function AuthProvider({ children, session: initialSession }: { children: 
     const supabase = createBrowserSupabaseClient()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event, 'Session exists:', !!session)
+      console.log('🔄 Auth state changed:', event, 'Session exists:', !!session, 'Session ID:', session?.user?.id)
       setSession(session)
       if (session) {
         console.log('👤 Session found, getting user...')
@@ -36,19 +36,19 @@ export function AuthProvider({ children, session: initialSession }: { children: 
             setIsAdmin(null)
             return
           }
-          
+
           console.log('✅ User found:', user.id, user.email)
           setUser(user)
-          
+
           console.log('🔍 Fetching profile for user:', user.id)
           const { data, error } = await supabase
             .from('profiles')
             .select('is_admin')
             .eq('id', user.id)
             .maybeSingle()
-          
+
           console.log('📊 Profile query result - data:', data, 'error:', error)
-          
+
           if (error) {
             console.warn('⚠️ AuthProvider: Error fetching profile:', error)
             setIsAdmin(false)
@@ -118,8 +118,52 @@ export function AuthProvider({ children, session: initialSession }: { children: 
     return () => subscription.unsubscribe()
   }, [])
 
+  const refreshSession = async () => {
+    console.log('🔄 Refreshing session...')
+    const supabase = createBrowserSupabaseClient()
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('📋 Session refresh result:', !!session)
+      setSession(session)
+      if (session) {
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError || !user) {
+          console.warn('❌ Refresh: Error getting user:', userError)
+          setUser(null)
+          setIsAdmin(null)
+          return
+        }
+        
+        console.log('✅ Refresh: User found:', user.id, user.email)
+        setUser(user)
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .maybeSingle()
+        
+        if (error) {
+          console.warn('⚠️ Refresh: Error fetching profile:', error)
+          setIsAdmin(false)
+        } else if (!data) {
+          console.log('❌ Refresh: No profile found for user')
+          setIsAdmin(false)
+        } else {
+          console.log('✅ Refresh: Profile found, is_admin:', data.is_admin)
+          setIsAdmin(data.is_admin === true)
+        }
+      } else {
+        setUser(null)
+        setIsAdmin(null)
+      }
+    } catch (err) {
+      console.warn('💥 Error refreshing session:', err)
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ session, user, isAdmin }}>
+    <AuthContext.Provider value={{ session, user, isAdmin, refreshSession }}>
       {children}
     </AuthContext.Provider>
   )
