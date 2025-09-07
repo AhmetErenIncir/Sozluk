@@ -54,3 +54,102 @@ export async function GET(request: Request) {
     )
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    // Create Supabase client
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+        },
+      }
+    )
+
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Parse request body
+    const body = await request.json()
+    const {
+      word,
+      meaning,
+      related_words = [],
+      language = 'tr',
+      part_of_speech,
+      example_sentences = [],
+      etymology,
+      pronunciation
+    } = body
+
+    // Validation
+    if (!word?.trim() || !meaning?.trim()) {
+      return NextResponse.json(
+        { error: 'Word and meaning are required' },
+        { status: 400 }
+      )
+    }
+
+    // Prepare data for insertion
+    const dictionaryEntry = {
+      word: word.trim(),
+      meaning: meaning.trim(),
+      created_by: user.id,
+      created_by_username: user.email?.split('@')[0] || user.email || 'unknown',
+      related_words: Array.isArray(related_words) ? related_words : [],
+      language,
+      part_of_speech: part_of_speech || null,
+      example_sentences: Array.isArray(example_sentences) ? example_sentences : [],
+      etymology: etymology || null,
+      pronunciation: pronunciation || null
+    }
+
+    const { data, error: dbError } = await supabase
+      .from('dictionary')
+      .insert([dictionaryEntry])
+      .select()
+
+    if (dbError) {
+      console.error('Database error:', dbError)
+      if (dbError.code === '42501') {
+        return NextResponse.json(
+          { error: 'Permission denied' },
+          { status: 403 }
+        )
+      } else if (dbError.code === '23505') {
+        return NextResponse.json(
+          { error: 'Word already exists' },
+          { status: 409 }
+        )
+      } else {
+        return NextResponse.json(
+          { error: `Database error: ${dbError.message}` },
+          { status: 500 }
+        )
+      }
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      data: data?.[0] || null 
+    })
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json(
+      { error: 'An unexpected error occurred' },
+      { status: 500 }
+    )
+  }
+}
