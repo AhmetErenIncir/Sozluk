@@ -71,16 +71,6 @@ export async function POST(request: Request) {
       }
     )
 
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
     // Parse request body
     const body = await request.json()
     const {
@@ -91,7 +81,9 @@ export async function POST(request: Request) {
       part_of_speech,
       example_sentences = [],
       etymology,
-      pronunciation
+      pronunciation,
+      user_id,
+      user_email
     } = body
 
     // Validation
@@ -102,12 +94,19 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!user_id) {
+      return NextResponse.json(
+        { error: 'User authentication required' },
+        { status: 401 }
+      )
+    }
+
     // Prepare data for insertion
     const dictionaryEntry = {
       word: word.trim(),
       meaning: meaning.trim(),
-      created_by: user.id,
-      created_by_username: user.email?.split('@')[0] || user.email || 'unknown',
+      created_by: user_id,
+      created_by_username: user_email?.split('@')[0] || user_email || 'unknown',
       related_words: Array.isArray(related_words) ? related_words : [],
       language,
       part_of_speech: part_of_speech || null,

@@ -8,24 +8,38 @@ import { createBrowserSupabaseClient } from "@/lib/supabaseBrowser"
 import { useRouter } from "next/navigation"
 
 export default function Navbar() {
-  const { session, user, isAdmin } = useAuth()
+  const { session, user, isAdmin, refreshSession } = useAuth()
   const router = useRouter()
 
   const handleLogout = async () => {
-    const supabase = createBrowserSupabaseClient()
-    
     try {
+      console.log('🔄 Starting logout process...')
+      const supabase = createBrowserSupabaseClient()
+      
       const { error } = await supabase.auth.signOut()
       if (error) {
-        console.error('Logout error:', error)
+        console.error('❌ Logout error:', error)
       } else {
-        console.log('Successfully logged out')
+        console.log('✅ Successfully logged out from Supabase')
       }
+
+      // Clear any cached data
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+
+      // Refresh the auth context
+      await refreshSession()
+
+      // Redirect to home
+      router.push('/')
       router.refresh()
-      router.push('/') // Redirect to home page after logout
+      
     } catch (error) {
-      console.error('Unexpected error during logout:', error)
-      router.refresh()
+      console.error('💥 Unexpected error during logout:', error)
+      // Force redirect even if there's an error
+      window.location.href = '/'
     }
   }
 
