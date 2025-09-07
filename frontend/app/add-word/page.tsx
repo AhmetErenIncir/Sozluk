@@ -12,6 +12,7 @@ import { useAuth } from "@/components/AuthProvider"
 import { useRouter } from "next/navigation"
 import { AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { RelatedWordsSelect } from "@/components/RelatedWordsSelect"
 
 export default function AddWord() {
   const { session, user, isAdmin } = useAuth()
@@ -23,7 +24,7 @@ export default function AddWord() {
   // Form fields
   const [word, setWord] = useState('')
   const [meaning, setMeaning] = useState('')
-  const [relatedWords, setRelatedWords] = useState('')
+  const [relatedWords, setRelatedWords] = useState<string[]>([])
   const [language, setLanguage] = useState('tr')
   const [partOfSpeech, setPartOfSpeech] = useState('')
   const [exampleSentences, setExampleSentences] = useState('')
@@ -68,7 +69,7 @@ export default function AddWord() {
         meaning: meaning.trim(),
         created_by: user.id,
         created_by_username: user.email?.split('@')[0] || user.email || 'unknown',
-        related_words: relatedWords ? relatedWords.split(',').map(w => w.trim()).filter(w => w) : [],
+        related_words: relatedWords || [],
         language,
         part_of_speech: partOfSpeech || null,
         example_sentences: exampleSentences ? exampleSentences.split('\n').map(s => s.trim()).filter(s => s) : [],
@@ -101,7 +102,7 @@ export default function AddWord() {
         // Clear form
         setWord('')
         setMeaning('')
-        setRelatedWords('')
+        setRelatedWords([])
         setLanguage('tr')
         setPartOfSpeech('')
         setExampleSentences('')
@@ -231,14 +232,14 @@ export default function AddWord() {
 
               <div className="space-y-2">
                 <Label htmlFor="relatedWords">İlgili Kelimeler</Label>
-                <Input
-                  id="relatedWords"
-                  placeholder="Virgülle ayırın: okuma, kütüphane, sayfa"
+                <RelatedWordsSelect
                   value={relatedWords}
-                  onChange={(e) => setRelatedWords(e.target.value)}
+                  onChange={setRelatedWords}
                   disabled={loading}
+                  currentWord={word}
+                  placeholder="Sözlükten ilgili kelimeleri seçin..."
                 />
-                <p className="text-sm text-gray-500">Virgül ile ayırarak birden fazla kelime ekleyebilirsiniz</p>
+                <p className="text-sm text-gray-500">Sadece sözlükte mevcut olan kelimeler seçilebilir</p>
               </div>
 
               <div className="space-y-2">
