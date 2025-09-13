@@ -74,7 +74,8 @@ export function GraphCanvas({
       // Node styling based on state
       const baseRadius = 8;
       const radius = isCenter ? baseRadius * 1.8 : baseRadius;
-      const fontSize = Math.max(10, Math.min(16, 12 / globalScale));
+      // Scale font size with zoom level - larger when zoomed in
+      const fontSize = Math.max(8, Math.min(24, 12 * Math.sqrt(globalScale)));
 
       // Node colors (dark mode friendly)
       let nodeColor = '#64748b'; // slate-500 (default)
@@ -116,31 +117,34 @@ export function GraphCanvas({
       ctx.stroke();
 
       // Text rendering with background for readability
-      const displayText = truncateText(label, 15);
+      const maxChars = Math.max(8, Math.min(20, Math.floor(15 / Math.sqrt(globalScale))));
+      const displayText = truncateText(label, maxChars);
       ctx.font = `${fontSize}px Inter, system-ui, sans-serif`;
+      ctx.fontWeight = isCenter ? 'bold' : 'normal';
+
       const textWidth = ctx.measureText(displayText).width;
       const textHeight = fontSize;
 
+      // Position text below the node
+      const padding = Math.max(2, Math.min(8, 4 * Math.sqrt(globalScale)));
+      const textX = node.x || 0;
+      const textY = (node.y || 0) + radius + fontSize + padding * 2;
+
       // Background rect for text
-      const padding = 4;
-      const rectX = (node.x || 0) - textWidth / 2 - padding;
-      const rectY = (node.y || 0) + radius + padding;
+      const rectX = textX - textWidth / 2 - padding;
+      const rectY = textY - fontSize / 2 - padding;
       const rectWidth = textWidth + padding * 2;
       const rectHeight = textHeight + padding * 2;
 
       // Semi-transparent background
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillStyle = isCenter ? 'rgba(29, 78, 216, 0.8)' : 'rgba(0, 0, 0, 0.7)';
       ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
 
-      // Text
+      // Text - positioned below the node
       ctx.fillStyle = textColor;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(
-        displayText,
-        node.x || 0,
-        rectY + rectHeight / 2
-      );
+      ctx.fillText(displayText, textX, textY);
     },
     [centerId]
   );
@@ -205,11 +209,12 @@ export function GraphCanvas({
         linkDirectionalParticleSpeed={0.004}
         linkDirectionalParticleWidth={2}
         linkDirectionalParticleColor={() => 'rgba(59, 130, 246, 0.6)'}
-        // Force simulation settings
+        // Force simulation settings - much larger distances between nodes
         d3Force={{
-          charge: { strength: -300 },
-          link: { distance: linkDistance },
-          center: { strength: 0.1 },
+          charge: { strength: -1500 },
+          link: { distance: linkDistance * 2.5 },
+          center: { strength: 0.05 },
+          collision: { radius: 80 },
         }}
         d3VelocityDecay={0.3}
         warmupTicks={100}

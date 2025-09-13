@@ -128,18 +128,3 @@ export default function GraphPage() {
   );
 }
 
-/**
- * Metadata for SEO optimization
- * This would typically be in a layout or metadata export,
- * but including here for reference
- */
-export const metadata = {
-  title: 'Görsel Sözlük - Kelime İlişkileri Grafiği',
-  description: 'Kelimeleri ve aralarındaki anlamsal ilişkileri görselleştiren interaktif graf arayüzü. Visual Thesaurus tarzında kelime keşfi deneyimi.',
-  keywords: ['sözlük', 'kelime', 'graf', 'görselleştirme', 'ilişki', 'anlam', 'türkçe'],
-  openGraph: {
-    title: 'Görsel Sözlük - Kelime İlişkileri',
-    description: 'Kelimelerin anlamsal ilişkilerini keşfedin',
-    type: 'website',
-  },
-};
