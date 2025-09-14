@@ -107,7 +107,7 @@ export function GraphCanvas({
       const isVisited = node.isVisited || false;
 
       // Node styling based on state
-      const baseRadius = 12; // Larger base radius
+      const baseRadius = 24; // doubled node size from original
       const radius = isCenter ? baseRadius * 2 : baseRadius;
       // Scale font size with zoom level
       const fontSize = Math.max(10, Math.min(22, 14 * Math.sqrt(globalScale)));
@@ -265,7 +265,7 @@ export function GraphCanvas({
       if (typeof link.strength === 'function') link.strength(0.7);
     }
     // Add collision and mild axis forces to spread nodes
-    api.d3Force('collide', forceCollide((n: any) => (n?.id === centerId ? 28 : 20)).iterations(2));
+    api.d3Force('collide', forceCollide((n: any) => (n?.id === centerId ? 56 : 40)).iterations(2));
     api.d3Force('x', forceX(0).strength(0.02));
     api.d3Force('y', forceY(0).strength(0.02));
     // Reheat simulation to apply changes
