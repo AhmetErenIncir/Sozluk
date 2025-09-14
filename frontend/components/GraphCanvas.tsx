@@ -5,7 +5,8 @@ import { useRef, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { WordNode, WordLink } from '@/lib/graph-types';
 import { truncateText } from '@/lib/text-utils';
-import { findOptimalTextPosition, TextBounds } from '@/lib/graph-positioning';
+import { findOptimalTextPosition, TextBounds, getTextBounds } from '@/lib/graph-positioning';
+import { forceCollide, forceX, forceY } from 'd3-force-3d';
 
 // Dynamically import ForceGraph2D to avoid SSR issues
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -82,37 +83,18 @@ export function GraphCanvas({
     }
   }, [centerId, nodes]);
 
-  // Physics control with post-processing optimization
+  // Physics control
   useEffect(() => {
     if (fgRef.current) {
       if (physicsEnabled) {
         fgRef.current.resumeAnimation();
       } else {
         fgRef.current.pauseAnimation();
-
-        // Optional: Apply additional spacing optimization when physics stops
-        setTimeout(() => {
-          if (fgRef.current) {
-            // Trigger a brief additional settling period with stronger forces
-            const graph = fgRef.current.d3Force('charge');
-            if (graph) {
-              graph.strength(-5000); // Temporarily increase repulsion
-              fgRef.current.d3ReheatSimulation(); // Restart briefly
-
-              setTimeout(() => {
-                if (fgRef.current) {
-                  graph.strength(-4000); // Reset to normal
-                  fgRef.current.pauseAnimation();
-                }
-              }, 1000);
-            }
-          }
-        }, 500);
       }
     }
   }, [physicsEnabled]);
 
-  // Clear text positions when nodes change significantly
+  // Clear text positions when nodes/center change significantly
   useEffect(() => {
     usedTextPositionsRef.current.clear();
   }, [nodes.length, centerId]);
@@ -177,8 +159,8 @@ export function GraphCanvas({
       const textWidth = ctx.measureText(displayText).width;
       const textHeight = fontSize;
 
-      // Get optimal text position using advanced positioning algorithm
-      const textPos = findOptimalTextPosition(
+      // Compute optimal text position based on current node positions
+      const computed = findOptimalTextPosition(
         node,
         radius,
         fontSize,
@@ -187,6 +169,10 @@ export function GraphCanvas({
         nodes,
         usedTextPositionsRef.current
       );
+      const paddingCompute = Math.max(6, fontSize * 0.5);
+      const bounds = getTextBounds(computed.x, computed.y, textWidth, textHeight, paddingCompute);
+      usedTextPositionsRef.current.set(node.id, bounds);
+      const textPos = { x: computed.x, y: computed.y };
 
       // Larger padding for better readability
       const padding = Math.max(6, Math.min(12, 8 * Math.sqrt(globalScale)));
@@ -269,18 +255,22 @@ export function GraphCanvas({
     if (!api) return;
     const charge = api.d3Force('charge');
     if (charge && typeof charge.strength === 'function') {
-      charge.strength(-4000);
+      charge.strength(-2000);
       if (typeof charge.distanceMin === 'function') charge.distanceMin(50);
-      if (typeof charge.distanceMax === 'function') charge.distanceMax(800);
+      if (typeof charge.distanceMax === 'function') charge.distanceMax(1200);
     }
     const link = api.d3Force('link');
     if (link) {
-      if (typeof link.distance === 'function') link.distance(linkDistance * 4.5);
+      if (typeof link.distance === 'function') link.distance(linkDistance);
       if (typeof link.strength === 'function') link.strength(0.7);
     }
+    // Add collision and mild axis forces to spread nodes
+    api.d3Force('collide', forceCollide((n: any) => (n?.id === centerId ? 28 : 20)).iterations(2));
+    api.d3Force('x', forceX(0).strength(0.02));
+    api.d3Force('y', forceY(0).strength(0.02));
     // Reheat simulation to apply changes
     api.d3ReheatSimulation?.();
-  }, [linkDistance, nodes.length]);
+  }, [linkDistance, nodes.length, centerId]);
 
   return (
     <div className="w-full h-full overflow-hidden rounded-lg border bg-background/95">
@@ -290,6 +280,7 @@ export function GraphCanvas({
         width={width}
         height={height}
         backgroundColor="transparent"
+        onRenderFramePre={() => { if (physicsEnabled) usedTextPositionsRef.current.clear(); }}
         nodeCanvasObject={nodeCanvasObject}
         linkCanvasObject={linkCanvasObject}
         onNodeClick={handleNodeClick}
