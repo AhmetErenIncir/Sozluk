@@ -1,5 +1,7 @@
 # Progress
+
 ## Status Summary
+
 - **Working**:
   - Frontend Next.js application with App Router
   - Tailwind CSS and Shadcn UI integration
@@ -25,6 +27,7 @@
   - Mock and Supabase data sources
 
 ## To-Do
+
 - [P1] ~~Implement Visual Thesaurus graph~~ ✅ COMPLETED
 - [P2] Enhance dictionary search with filters and advanced options
 - [P3] Add user favorites and word history
@@ -35,11 +38,13 @@
 - [P8] Implement collaborative word exploration
 
 ## Known Issues
+
 - Graph performance may degrade with >100 nodes (current limit: 50)
 - Some Turkish characters may not display correctly in older browsers
 - Graph physics simulation can be CPU-intensive on low-end devices
 
 ## Milestones
+
 - **M1: Initial Project Setup (Completed)**: Frontend and backend directories created, Next.js app initialized, Shadcn UI integrated, basic landing page implemented.
 - **M2: Visual Thesaurus (Completed)**: Interactive graph visualization with full Turkish language support, smart positioning, and navigation.
 - **M3: Core Dictionary (In Progress)**: Complete word search, definition display, and CRUD operations.
@@ -47,6 +52,7 @@
 - **M5: Advanced Features (Future)**: Audio pronunciation, etymology, example sentences, word games.
 
 ## Recent Achievements
+
 - ✅ Implemented complete Visual Thesaurus graph system
 - ✅ Created graph positioning algorithm with 12 strategies
 - ✅ Added Turkish character normalization
@@ -57,14 +63,31 @@
 - ✅ Optimized force simulation parameters
 
 ## Performance Metrics
+
 - Graph rendering: <100ms for 50 nodes
 - Search response: <300ms (debounced)
 - Node interaction: 60 FPS
 - Memory usage: ~50MB for typical session
 
 ## Changelog
-- 2024-01-15: Visual Thesaurus graph implementation completed
-- 2024-01-14: Graph positioning and Turkish text support added
-- 2024-01-13: Initial graph prototype with force simulation
-- 2024-01-10: Supabase authentication implemented
+
+- 2025-09-14: Enhanced graph layout with improved text positioning and node spacing
+- 2025-09-13: Implemented GraphControls and GraphView components for interactive graph visualization
+- 2025-09-12: Enhanced authentication flow with refreshSession and user data handling
+- 2025-09-11: Improved error handling and type safety in API and cookie management
+- 2025-09-10: Refactored AddWord save logic to use API route for dictionary entries
+- 2025-09-09: Implemented RelatedWordsSelect component and integrated with AddWord form
+- 2025-09-08: Updated AuthProvider user state handling and session initialization
+- 2025-09-07: Added Select and Alert UI components for enhanced UX
+- 2025-09-06: Enhanced auth state handling and error management
+- 2025-09-05: Improved navbar layout and navigation structure
+- 2025-09-04: Added navbar component and auth redirects
+- 2025-09-03: Implemented admin role check in AuthProvider
+- 2025-09-02: Added package-lock.json for dependency management
+- 2025-09-01: Fixed auth edge cases and logout functionality
+- 2025-08-31: Created AGENTS.md contributor guide
+- 2025-01-15: Visual Thesaurus graph implementation completed
+- 2025-01-14: Graph positioning and Turkish text support added
+- 2025-01-13: Initial graph prototype with force simulation
+- 2025-01-10: Supabase authentication implemented
 - 2024-07-30: Project created

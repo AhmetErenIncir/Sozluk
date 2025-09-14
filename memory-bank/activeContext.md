@@ -24,6 +24,21 @@
 
 ## Recent Changes
 
+- **2025-09-14**: Enhanced graph layout with improved text positioning and node spacing using advanced collision detection algorithms
+- **2025-09-13**: Implemented GraphControls and GraphView components for interactive graph visualization with search functionality
+- **2025-09-12**: Enhanced authentication flow by adding refreshSession and user data handling in AddWord, AuthProvider, and Navbar components
+- **2025-09-11**: Improved error handling and type safety in API routes and cookie management
+- **2025-09-10**: Refactored AddWord save logic to use dedicated API route for dictionary entries
+- **2025-09-09**: Implemented RelatedWordsSelect component and integrated with AddWord form for better word relationship management
+- **2025-09-08**: Updated AuthProvider user state handling and added session initialization logic
+- **2025-09-07**: Added Select and Alert UI components via shadcn for enhanced user experience
+- **2025-09-06**: Enhanced auth state handling and error management in AuthProvider
+- **2025-09-05**: Improved navbar layout and navigation structure
+- **2025-09-04**: Added navbar component with auth redirects and proper navigation flow
+- **2025-09-03**: Implemented admin role check in AuthProvider for access control
+- **2025-09-02**: Added package-lock.json for better dependency management
+- **2025-09-01**: Fixed auth edge cases in logout and session handling
+- **2025-08-31**: Created AGENTS.md contributor guide with project guidelines
 - **2025-01-16**: Implemented "Kelime Ekle" (Add Word) functionality:
   - Created `dictionary` table in Supabase with columns: word, meaning, created_by, created_by_username, related_words, language, part_of_speech, example_sentences, etymology, pronunciation
   - Enhanced Add Word page (`/add-word`) with complete form fields and Supabase integration
