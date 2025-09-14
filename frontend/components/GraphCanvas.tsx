@@ -41,6 +41,33 @@ export function GraphCanvas({
   const fgRef = useRef<any>(null);
   const usedTextPositionsRef = useRef<Map<string, TextBounds>>(new Map());
 
+  // Helper: draw rounded rectangle with fallback for older Canvas typings
+  const drawRoundedRect = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number
+  ) => {
+    const anyCtx = ctx as any;
+    if (typeof anyCtx.roundRect === 'function') {
+      anyCtx.roundRect(x, y, width, height, radius);
+      return;
+    }
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.arcTo(x + width, y, x + width, y + r, r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.arcTo(x + width, y + height, x + width - r, y + height, r);
+    ctx.lineTo(x + r, y + height);
+    ctx.arcTo(x, y + height, x, y + height - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+  };
+
   // Auto-zoom and center on center changes
   useEffect(() => {
     if (fgRef.current && centerId) {
@@ -174,7 +201,7 @@ export function GraphCanvas({
       // Draw rounded rectangle background
       ctx.fillStyle = isCenter ? 'rgba(29, 78, 216, 0.9)' : 'rgba(0, 0, 0, 0.8)';
       ctx.beginPath();
-      ctx.roundRect(rectX, rectY, rectWidth, rectHeight, cornerRadius);
+      drawRoundedRect(ctx, rectX, rectY, rectWidth, rectHeight, cornerRadius);
       ctx.fill();
 
       // Add subtle border to text background
@@ -188,7 +215,7 @@ export function GraphCanvas({
       ctx.textBaseline = 'middle';
       ctx.fillText(displayText, textPos.x, textPos.y);
     },
-    [centerId, nodes, findOptimalTextPosition]
+    [centerId, nodes]
   );
 
   // Custom link rendering
@@ -227,11 +254,33 @@ export function GraphCanvas({
   );
 
   // Handle node hover for cursor change
-  const handleNodeHover = useCallback((node: WordNode | null) => {
-    if (fgRef.current) {
-      fgRef.current.canvas().style.cursor = node ? 'pointer' : 'default';
+  const handleNodeHover = useCallback(
+    (node: WordNode | null, _prev?: WordNode | null) => {
+      if (fgRef.current) {
+        fgRef.current.canvas().style.cursor = node ? 'pointer' : 'default';
+      }
+    },
+    []
+  );
+
+  // Configure d3 forces on mount/updates (use ref API, not props)
+  useEffect(() => {
+    const api = fgRef.current;
+    if (!api) return;
+    const charge = api.d3Force('charge');
+    if (charge && typeof charge.strength === 'function') {
+      charge.strength(-4000);
+      if (typeof charge.distanceMin === 'function') charge.distanceMin(50);
+      if (typeof charge.distanceMax === 'function') charge.distanceMax(800);
     }
-  }, []);
+    const link = api.d3Force('link');
+    if (link) {
+      if (typeof link.distance === 'function') link.distance(linkDistance * 4.5);
+      if (typeof link.strength === 'function') link.strength(0.7);
+    }
+    // Reheat simulation to apply changes
+    api.d3ReheatSimulation?.();
+  }, [linkDistance, nodes.length]);
 
   return (
     <div className="w-full h-full overflow-hidden rounded-lg border bg-background/95">
@@ -250,33 +299,15 @@ export function GraphCanvas({
         linkDirectionalParticles={2}
         linkDirectionalParticleSpeed={0.004}
         linkDirectionalParticleWidth={2}
-        linkDirectionalParticleColor={() => 'rgba(59, 130, 246, 0.6)'}
-        // Force simulation settings - optimized for Visual Thesaurus-like spacing
-        d3Force={{
-          charge: {
-            strength: -4000, // Very strong repulsion
-            distanceMin: 50, // Minimum distance for charge calculation
-            distanceMax: 800 // Maximum distance for charge effect
-          },
-          link: {
-            distance: linkDistance * 4.5, // Extra long links
-            strength: 0.7 // Strong link constraint
-          },
-          center: { strength: 0.015 }, // Very weak center pull
-          collision: {
-            radius: 150, // Large collision radius
-            strength: 1.2 // Strong collision detection
-          },
-          forceX: { strength: 0.005 }, // Minimal horizontal spreading
-          forceY: { strength: 0.005 }, // Minimal vertical spreading
-        }}
+        linkDirectionalParticleColor={(_l) => 'rgba(59, 130, 246, 0.6)'}
         d3VelocityDecay={0.15} // Even slower decay for very smooth settling
         warmupTicks={300} // Extended warmup for optimal initial layout
         cooldownTicks={500} // Much longer cooldown for stability
         d3AlphaMin={0.001} // Lower alpha minimum for better convergence
         d3AlphaDecay={0.02} // Slower alpha decay
         enableNodeDrag={true}
-        enableZoomPanInteraction={true}
+        enableZoomInteraction={true}
+        enablePanInteraction={true}
         enablePointerInteraction={true}
         minZoom={0.1}
         maxZoom={8}

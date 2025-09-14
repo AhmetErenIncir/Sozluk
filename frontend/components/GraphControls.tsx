@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, ChangeEvent } from 'react';
 import { Search, ArrowLeft, RotateCcw, Play, Pause, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,7 +65,7 @@ export function GraphControls({ className }: GraphControlsProps) {
   }, [debouncedSearchQuery]);
 
   // Handle keyboard shortcuts
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: ReactKeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSearch();
@@ -72,12 +73,12 @@ export function GraphControls({ className }: GraphControlsProps) {
   }, [handleSearch]);
 
   // Handle slider changes with validation
-  const handleMaxNodesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMaxNodesChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const value = Math.max(50, Math.min(500, parseInt(e.target.value) || 250));
     setMaxNodes(value);
   }, [setMaxNodes]);
 
-  const handleMaxRelatedChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMaxRelatedChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const value = Math.max(5, Math.min(50, parseInt(e.target.value) || 20));
     setMaxRelatedPerNode(value);
   }, [setMaxRelatedPerNode]);

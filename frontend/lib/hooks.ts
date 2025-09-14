@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { DependencyList } from 'react';
 
 /**
  * Debounces a value to prevent excessive updates
@@ -28,7 +29,7 @@ export function useDebounce<T>(value: T, delay: number): T {
  */
 export function useKeyboard(
   callback: (event: KeyboardEvent) => void,
-  dependencies: React.DependencyList = []
+  dependencies: DependencyList = []
 ) {
   useEffect(() => {
     document.addEventListener('keydown', callback);

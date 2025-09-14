@@ -10,14 +10,17 @@ export const createServerSupabaseClient = () => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        async get(name: string) {
-          return (await cookieStore).get(name)?.value;
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
-        async set(name: string, value: string, options?: Record<string, unknown>) {
-          (await cookieStore).set({ name, value, ...options });
+        set(name: string, value: string, options?: any) {
+          // Next.js RequestCookies.set supports (name, value, options)
+          // Using the tuple form keeps types happy across versions
+          cookieStore.set(name, value, options);
         },
-        async remove(name: string, options?: Record<string, unknown>) {
-          (await cookieStore).delete({ name, ...options });
+        remove(name: string, _options?: any) {
+          // RequestCookies.delete accepts just the name
+          cookieStore.delete(name);
         },
       },
     }
