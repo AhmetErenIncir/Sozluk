@@ -116,7 +116,7 @@ export function GraphView({ initialWord = 'kitap', className }: GraphViewProps) 
             onNodeClick={handleNodeClick}
             width={graphWidth}
             height={graphHeight}
-            linkDistance={350}
+            linkDistance={150}
           />
         ) : (
           <div className="flex items-center justify-center h-full">

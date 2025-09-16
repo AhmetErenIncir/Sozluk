@@ -267,21 +267,32 @@ export function GraphCanvas({
   useEffect(() => {
     const api = fgRef.current;
     if (!api) return;
+    
+    // Charge force - stronger repulsion to prevent overlap
     const charge = api.d3Force('charge');
     if (charge && typeof charge.strength === 'function') {
-      charge.strength(-2000);
-      if (typeof charge.distanceMin === 'function') charge.distanceMin(50);
-      if (typeof charge.distanceMax === 'function') charge.distanceMax(1200);
+      charge.strength(-3000); // Increased repulsion strength
+      if (typeof charge.distanceMin === 'function') charge.distanceMin(80); // Increased minimum distance
+      if (typeof charge.distanceMax === 'function') charge.distanceMax(1500);
     }
+    
+    // Link force - maintain connection distances
     const link = api.d3Force('link');
     if (link) {
-      if (typeof link.distance === 'function') link.distance(linkDistance);
-      if (typeof link.strength === 'function') link.strength(0.7);
+      if (typeof link.distance === 'function') link.distance(linkDistance || 120); // Default reasonable distance
+      if (typeof link.strength === 'function') link.strength(0.5); // Slightly reduced for smoother movement
     }
-    // Add collision and mild axis forces to spread nodes
-    api.d3Force('collide', forceCollide((n: any) => (n?.id === centerId ? 56 : 40)).iterations(2));
-    api.d3Force('x', forceX(0).strength(0.02));
-    api.d3Force('y', forceY(0).strength(0.02));
+    
+    // Collision force - prevent nodes from overlapping
+    api.d3Force('collide', forceCollide((n: any) => {
+      // Larger collision radius for center node, standard for others
+      return n?.id === centerId ? 80 : 60;
+    }).iterations(3)); // More iterations for better collision detection
+    
+    // Center force - gentle pull towards center to keep graph cohesive
+    api.d3Force('x', forceX(0).strength(0.01)); // Reduced strength for more natural spread
+    api.d3Force('y', forceY(0).strength(0.01));
+    
     // Reheat simulation to apply changes
     api.d3ReheatSimulation?.();
   }, [linkDistance, nodes.length, centerId]);
@@ -306,11 +317,11 @@ export function GraphCanvas({
         linkDirectionalParticleSpeed={0.004}
         linkDirectionalParticleWidth={2}
         linkDirectionalParticleColor={(_l) => 'rgba(59, 130, 246, 0.6)'}
-        d3VelocityDecay={0.15} // Even slower decay for very smooth settling
-        warmupTicks={300} // Extended warmup for optimal initial layout
-        cooldownTicks={500} // Much longer cooldown for stability
-        d3AlphaMin={0.001} // Lower alpha minimum for better convergence
-        d3AlphaDecay={0.02} // Slower alpha decay
+        d3VelocityDecay={0.3} // Moderate decay for stable but responsive simulation
+        warmupTicks={100} // Reduced warmup since we have initial positions
+        cooldownTicks={200} // Moderate cooldown for stability
+        d3AlphaMin={0.01} // Standard alpha minimum
+        d3AlphaDecay={0.03} // Standard alpha decay
         enableNodeDrag={true}
         enableZoomInteraction={true}
         enablePanInteraction={true}

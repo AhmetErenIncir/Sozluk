@@ -87,6 +87,41 @@ function pruneGraph(
 }
 
 /**
+ * Generates initial positions for nodes in a circular layout
+ */
+function generateInitialPositions(
+  centerNode: string,
+  relatedNodes: string[],
+  existingNodes: Map<string, WordNode>
+): Map<string, { x: number; y: number }> {
+  const positions = new Map<string, { x: number; y: number }>();
+  
+  // Center node at origin if it doesn't have a position
+  const centerExisting = existingNodes.get(centerNode);
+  if (!centerExisting || centerExisting.x === undefined || centerExisting.y === undefined) {
+    positions.set(centerNode, { x: 0, y: 0 });
+  }
+  
+  // Arrange related nodes in a circle around center
+  const radius = 150; // Initial radius for circular layout
+  const angleStep = (2 * Math.PI) / Math.max(1, relatedNodes.length);
+  
+  relatedNodes.forEach((nodeId, index) => {
+    const existing = existingNodes.get(nodeId);
+    // Only set position if node doesn't already have one
+    if (!existing || existing.x === undefined || existing.y === undefined) {
+      const angle = index * angleStep;
+      positions.set(nodeId, {
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius
+      });
+    }
+  });
+  
+  return positions;
+}
+
+/**
  * Merges new graph data with existing data, avoiding duplicates
  */
 function mergeGraphData(
@@ -106,18 +141,41 @@ function mergeGraphData(
       label: newData.word,
       isCenter: true,
       degree: 0,
+      x: 0,  // Initialize at origin
+      y: 0,
     });
   } else {
     // Update existing node to be center
     const existingNode = nodeMap.get(centerId)!;
     existingNode.isCenter = true;
+    // Ensure it has a position
+    if (existingNode.x === undefined) existingNode.x = 0;
+    if (existingNode.y === undefined) existingNode.y = 0;
   }
 
   // Limit related words per the configuration
   const limitedRelated = newData.related.slice(0, maxRelatedPerNode);
 
+  // Generate initial positions for new nodes
+  const relatedNodeIds = limitedRelated
+    .map(word => normalizeWord(word))
+    .filter(id => id !== centerId);
+  
+  const initialPositions = generateInitialPositions(centerId, relatedNodeIds, nodeMap);
+  
+  // Apply initial positions to nodes that need them
+  initialPositions.forEach((pos, nodeId) => {
+    if (nodeMap.has(nodeId)) {
+      const node = nodeMap.get(nodeId)!;
+      if (node.x === undefined || node.y === undefined) {
+        node.x = pos.x;
+        node.y = pos.y;
+      }
+    }
+  });
+
   // Add related nodes and links
-  limitedRelated.forEach(relatedWord => {
+  limitedRelated.forEach((relatedWord, index) => {
     const normalizedRelated = normalizeWord(relatedWord);
 
     // Skip self-links
@@ -125,10 +183,13 @@ function mergeGraphData(
 
     // Add related node if it doesn't exist
     if (!nodeMap.has(normalizedRelated)) {
+      const position = initialPositions.get(normalizedRelated) || { x: 0, y: 0 };
       nodeMap.set(normalizedRelated, {
         id: normalizedRelated,
         label: relatedWord,
         degree: 1,
+        x: position.x,
+        y: position.y,
       });
     } else {
       // Update degree

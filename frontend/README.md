@@ -250,6 +250,9 @@ const source = process.env.NODE_ENV === 'development'
 
 ## 🐛 Troubleshooting
 
+### Known Issues and Fixes
+See `docs/BUGFIXES.md` for detailed documentation of known issues and their fixes.
+
 ### Common Issues
 
 1. **Graph not rendering**
