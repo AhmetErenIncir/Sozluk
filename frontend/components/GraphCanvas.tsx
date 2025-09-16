@@ -231,7 +231,7 @@ export function GraphCanvas({
 
   // Handle node clicks
   const handleNodeClick = useCallback(
-    (node: any) => {
+    (node: any, _evt?: MouseEvent) => {
       if (node && typeof onNodeClick === 'function') {
         onNodeClick(node as WordNode);
       }
@@ -247,6 +247,20 @@ export function GraphCanvas({
       }
     },
     []
+  );
+
+  // Define pointer area for nodes so clicks/hover work with custom rendering
+  const nodePointerAreaPaint = useCallback(
+    (node: any, color: string, ctx: CanvasRenderingContext2D, _globalScale: number) => {
+      const isCenter = node.id === centerId;
+      const baseRadius = 24;
+      const radius = isCenter ? baseRadius * 2 : baseRadius;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(node.x || 0, node.y || 0, radius + 4, 0, 2 * Math.PI);
+      ctx.fill();
+    },
+    [centerId]
   );
 
   // Configure d3 forces on mount/updates (use ref API, not props)
@@ -282,6 +296,7 @@ export function GraphCanvas({
         backgroundColor="transparent"
         onRenderFramePre={() => { if (physicsEnabled) usedTextPositionsRef.current.clear(); }}
         nodeCanvasObject={nodeCanvasObject}
+        nodePointerAreaPaint={nodePointerAreaPaint}
         linkCanvasObject={linkCanvasObject}
         onNodeClick={handleNodeClick}
         onNodeHover={handleNodeHover}
