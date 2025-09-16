@@ -1,7 +1,7 @@
 // GraphCanvas component using react-force-graph-2d with custom rendering
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { WordNode, WordLink } from '@/lib/graph-types';
 import { truncateText } from '@/lib/text-utils';
@@ -41,7 +41,10 @@ export function GraphCanvas({
 }: GraphCanvasProps) {
   const fgRef = useRef<any>(null);
   const usedTextPositionsRef = useRef<Map<string, TextBounds>>(new Map());
-
+  const [currentZoom, setCurrentZoom] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isZooming, setIsZooming] = useState(false);
+  const zoomTimeoutRef = useRef<NodeJS.Timeout>();
   // Helper: draw rounded rectangle with fallback for older Canvas typings
   const drawRoundedRect = (
     ctx: CanvasRenderingContext2D,
@@ -72,27 +75,27 @@ export function GraphCanvas({
   // Auto-zoom and center on center changes
   useEffect(() => {
     if (fgRef.current && centerId) {
-      const centerNode = nodes.find(node => node.id === centerId);
-      if (centerNode && centerNode.x !== undefined && centerNode.y !== undefined) {
-        // Smooth transition to new center
-        setTimeout(() => {
-          fgRef.current?.centerAt(centerNode.x, centerNode.y, 1000);
-          fgRef.current?.zoom(1.2, 1000);
-        }, 100);
-      }
+      // Short delay to ensure nodes are positioned
+      setTimeout(() => {
+        // Center at origin since we always position center node there
+        fgRef.current?.centerAt(0, 0, 600);
+        // Reset zoom to default for consistent viewing
+        fgRef.current?.zoom(1.2, 600);
+        setCurrentZoom(1.2);
+      }, 100); // Minimal delay since we have predetermined positions
     }
-  }, [centerId, nodes]);
+  }, [centerId]); // Only trigger on centerId change
 
   // Physics control
   useEffect(() => {
-    if (fgRef.current) {
+    if (fgRef.current && !isZooming) {
       if (physicsEnabled) {
         fgRef.current.resumeAnimation();
       } else {
         fgRef.current.pauseAnimation();
       }
     }
-  }, [physicsEnabled]);
+  }, [physicsEnabled, isZooming]);
 
   // Clear text positions when nodes/center change significantly
   useEffect(() => {
@@ -106,11 +109,11 @@ export function GraphCanvas({
       const isCenter = node.id === centerId;
       const isVisited = node.isVisited || false;
 
-      // Node styling based on state
-      const baseRadius = 24; // doubled node size from original
-      const radius = isCenter ? baseRadius * 2 : baseRadius;
-      // Scale font size with zoom level
-      const fontSize = Math.max(10, Math.min(22, 14 * Math.sqrt(globalScale)));
+      // Node styling based on state - larger nodes for better text display
+      const baseRadius = 20; // Larger base radius for text visibility
+      const radius = isCenter ? baseRadius * 1.3 : baseRadius;
+      // Scale font size with zoom level - readable text
+      const fontSize = Math.max(12, Math.min(16, 14 / Math.sqrt(globalScale)));
 
       // Node colors (dark mode friendly)
       let nodeColor = '#64748b'; // slate-500 (default)
@@ -151,55 +154,30 @@ export function GraphCanvas({
       ctx.fill();
       ctx.stroke();
 
-      // Text rendering with smart positioning
-      const maxChars = Math.max(6, Math.min(16, Math.floor(12 / Math.sqrt(globalScale))));
-      const displayText = truncateText(label, maxChars);
+      // Text rendering - show label clearly
+      const displayText = label || node.id; // Use label or id
       ctx.font = `${isCenter ? 'bold' : 'normal'} ${fontSize}px Inter, system-ui, sans-serif`;
 
       const textWidth = ctx.measureText(displayText).width;
       const textHeight = fontSize;
 
-      // Compute optimal text position based on current node positions
-      const computed = findOptimalTextPosition(
-        node,
-        radius,
-        fontSize,
-        textWidth,
-        textHeight,
-        nodes,
-        usedTextPositionsRef.current
-      );
-      const paddingCompute = Math.max(6, fontSize * 0.5);
-      const bounds = getTextBounds(computed.x, computed.y, textWidth, textHeight, paddingCompute);
-      usedTextPositionsRef.current.set(node.id, bounds);
-      const textPos = { x: computed.x, y: computed.y };
-
-      // Larger padding for better readability
-      const padding = Math.max(6, Math.min(12, 8 * Math.sqrt(globalScale)));
-
-      // Background rect for text with rounded corners
-      const rectX = textPos.x - textWidth / 2 - padding;
-      const rectY = textPos.y - fontSize / 2 - padding;
-      const rectWidth = textWidth + padding * 2;
-      const rectHeight = textHeight + padding * 2;
-      const cornerRadius = 6;
-
-      // Draw rounded rectangle background
-      ctx.fillStyle = isCenter ? 'rgba(29, 78, 216, 0.9)' : 'rgba(0, 0, 0, 0.8)';
-      ctx.beginPath();
-      drawRoundedRect(ctx, rectX, rectY, rectWidth, rectHeight, cornerRadius);
-      ctx.fill();
-
-      // Add subtle border to text background
-      ctx.strokeStyle = isCenter ? 'rgba(59, 130, 246, 0.8)' : 'rgba(100, 116, 139, 0.6)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Draw text with better positioning
+      // Draw text directly on the node
       ctx.fillStyle = textColor;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(displayText, textPos.x, textPos.y);
+      
+      // Use smaller font if text is too wide for node
+      let finalFontSize = fontSize;
+      let finalText = displayText;
+      
+      // Adjust font size to fit text in node if needed
+      if (textWidth > radius * 2.2) {
+        finalFontSize = Math.max(10, fontSize * (radius * 2.2 / textWidth));
+        ctx.font = `${isCenter ? 'bold' : 'normal'} ${finalFontSize}px Inter, system-ui, sans-serif`;
+      }
+      
+      // Draw the full label on the node
+      ctx.fillText(finalText, node.x || 0, node.y || 0);
     },
     [centerId, nodes]
   );
@@ -242,8 +220,16 @@ export function GraphCanvas({
   // Handle node hover for cursor change
   const handleNodeHover = useCallback(
     (node: WordNode | null, _prev?: WordNode | null) => {
-      if (fgRef.current) {
-        fgRef.current.canvas().style.cursor = node ? 'pointer' : 'default';
+      try {
+        if (fgRef.current && fgRef.current.canvas) {
+          const canvas = fgRef.current.canvas();
+          if (canvas && canvas.style) {
+            canvas.style.cursor = node ? 'pointer' : 'default';
+          }
+        }
+      } catch (e) {
+        // Silently handle any errors during hover
+        console.debug('Hover cursor update skipped');
       }
     },
     []
@@ -253,8 +239,8 @@ export function GraphCanvas({
   const nodePointerAreaPaint = useCallback(
     (node: any, color: string, ctx: CanvasRenderingContext2D, _globalScale: number) => {
       const isCenter = node.id === centerId;
-      const baseRadius = 24;
-      const radius = isCenter ? baseRadius * 2 : baseRadius;
+      const baseRadius = 20; // Match the visual node size
+      const radius = isCenter ? baseRadius * 1.3 : baseRadius;
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.arc(node.x || 0, node.y || 0, radius + 4, 0, 2 * Math.PI);
@@ -268,44 +254,195 @@ export function GraphCanvas({
     const api = fgRef.current;
     if (!api) return;
     
-    // Charge force - stronger repulsion to prevent overlap
+    // Don't modify forces while zooming
+    if (isZooming) return;
+    
+    // Charge force - balanced for good clustering
     const charge = api.d3Force('charge');
     if (charge && typeof charge.strength === 'function') {
-      charge.strength(-3000); // Increased repulsion strength
-      if (typeof charge.distanceMin === 'function') charge.distanceMin(80); // Increased minimum distance
-      if (typeof charge.distanceMax === 'function') charge.distanceMax(1500);
+      charge.strength(-1200); // Balanced repulsion
+      if (typeof charge.distanceMin === 'function') charge.distanceMin(40);
+      if (typeof charge.distanceMax === 'function') charge.distanceMax(400);
     }
     
     // Link force - maintain connection distances
     const link = api.d3Force('link');
     if (link) {
-      if (typeof link.distance === 'function') link.distance(linkDistance || 120); // Default reasonable distance
-      if (typeof link.strength === 'function') link.strength(0.5); // Slightly reduced for smoother movement
+      if (typeof link.distance === 'function') link.distance(100); // Optimal distance
+      if (typeof link.strength === 'function') link.strength(1); // Strong links to maintain structure
     }
     
     // Collision force - prevent nodes from overlapping
     api.d3Force('collide', forceCollide((n: any) => {
-      // Larger collision radius for center node, standard for others
-      return n?.id === centerId ? 80 : 60;
-    }).iterations(3)); // More iterations for better collision detection
+      // Adjusted for larger nodes
+      return n?.id === centerId ? 35 : 30;
+    }).iterations(3));
     
-    // Center force - gentle pull towards center to keep graph cohesive
-    api.d3Force('x', forceX(0).strength(0.01)); // Reduced strength for more natural spread
-    api.d3Force('y', forceY(0).strength(0.01));
+    // Center force - stronger to keep graph centered
+    api.d3Force('x', forceX(0).strength(0.05));
+    api.d3Force('y', forceY(0).strength(0.05));
     
-    // Reheat simulation to apply changes
-    api.d3ReheatSimulation?.();
-  }, [linkDistance, nodes.length, centerId]);
+    // Reheat simulation to apply changes only if not zooming
+    if (!isZooming) {
+      api.d3ReheatSimulation?.();
+    }
+  }, [linkDistance, nodes.length, centerId, isZooming]);
+
+  // Manual zoom controls
+  const handleZoomIn = useCallback(() => {
+    if (!fgRef.current) return;
+    
+    // Completely stop physics during zoom
+    setIsZooming(true);
+    fgRef.current.pauseAnimation();
+    
+    // Stop the D3 simulation
+    const simulation = fgRef.current.d3Force;
+    if (simulation) {
+      simulation.stop();
+    }
+    
+    const newZoom = Math.min(8, currentZoom * 1.2);
+    fgRef.current.zoom(newZoom, 400);
+    setCurrentZoom(newZoom);
+    
+    // Resume physics after zoom if it was enabled
+    clearTimeout(zoomTimeoutRef.current);
+    zoomTimeoutRef.current = setTimeout(() => {
+      setIsZooming(false);
+      if (physicsEnabled) {
+        fgRef.current?.resumeAnimation();
+      }
+    }, 500);
+  }, [currentZoom, physicsEnabled]);
+
+  const handleZoomOut = useCallback(() => {
+    if (!fgRef.current) return;
+    
+    // Completely stop physics during zoom
+    setIsZooming(true);
+    fgRef.current.pauseAnimation();
+    
+    // Stop the D3 simulation
+    const simulation = fgRef.current.d3Force;
+    if (simulation) {
+      simulation.stop();
+    }
+    
+    const newZoom = Math.max(0.1, currentZoom * 0.8);
+    fgRef.current.zoom(newZoom, 400);
+    setCurrentZoom(newZoom);
+    
+    // Resume physics after zoom if it was enabled
+    clearTimeout(zoomTimeoutRef.current);
+    zoomTimeoutRef.current = setTimeout(() => {
+      setIsZooming(false);
+      if (physicsEnabled) {
+        fgRef.current?.resumeAnimation();
+      }
+    }, 500);
+  }, [currentZoom, physicsEnabled]);
+
+  const handleZoomReset = useCallback(() => {
+    if (!fgRef.current) return;
+    
+    // Completely stop physics during zoom
+    setIsZooming(true);
+    fgRef.current.pauseAnimation();
+    
+    // Stop the D3 simulation
+    const simulation = fgRef.current.d3Force;
+    if (simulation) {
+      simulation.stop();
+    }
+    
+    fgRef.current.zoom(1, 400);
+    setCurrentZoom(1);
+    
+    // Resume physics after zoom if it was enabled
+    clearTimeout(zoomTimeoutRef.current);
+    zoomTimeoutRef.current = setTimeout(() => {
+      setIsZooming(false);
+      if (physicsEnabled) {
+        fgRef.current?.resumeAnimation();
+      }
+    }, 500);
+  }, [physicsEnabled]);
+
+  // Setup zoom wheel handler
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!fgRef.current) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Completely stop the physics engine during zoom
+      setIsZooming(true);
+      fgRef.current.pauseAnimation();
+      
+      // Stop the D3 simulation completely
+      const simulation = fgRef.current.d3Force;
+      if (simulation) {
+        simulation.stop();
+      }
+      
+      const delta = e.deltaY;
+      const zoomFactor = delta > 0 ? 0.9 : 1.1;
+      const newZoom = Math.max(0.1, Math.min(8, currentZoom * zoomFactor));
+      
+      fgRef.current.zoom(newZoom, 100);
+      setCurrentZoom(newZoom);
+      
+      // Resume physics after zoom if it was enabled
+      clearTimeout(zoomTimeoutRef.current);
+      zoomTimeoutRef.current = setTimeout(() => {
+        setIsZooming(false);
+        if (physicsEnabled && fgRef.current) {
+          fgRef.current.resumeAnimation();
+        }
+      }, 300);
+    };
+
+    const container = containerRef.current;
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      clearTimeout(zoomTimeoutRef.current);
+    };
+  }, [currentZoom, physicsEnabled]);
+
+  // Track zoom changes from the graph itself
+  useEffect(() => {
+    if (!fgRef.current) return;
+    
+    const checkZoom = () => {
+      if (fgRef.current && fgRef.current.zoom) {
+        const zoom = fgRef.current.zoom();
+        if (zoom !== currentZoom) {
+          setCurrentZoom(zoom);
+        }
+      }
+    };
+    
+    const interval = setInterval(checkZoom, 500);
+    return () => clearInterval(interval);
+  }, [currentZoom]);
 
   return (
-    <div className="w-full h-full overflow-hidden rounded-lg border bg-background/95">
+    <div ref={containerRef} className="relative w-full h-full overflow-hidden rounded-lg border bg-background/95">
       <ForceGraph2D
         ref={fgRef}
         graphData={{ nodes, links }}
         width={width}
         height={height}
         backgroundColor="transparent"
-        onRenderFramePre={() => { if (physicsEnabled) usedTextPositionsRef.current.clear(); }}
+        onRenderFramePre={() => { 
+          if (physicsEnabled && !isZooming) usedTextPositionsRef.current.clear();
+        }}
         nodeCanvasObject={nodeCanvasObject}
         nodePointerAreaPaint={nodePointerAreaPaint}
         linkCanvasObject={linkCanvasObject}
@@ -317,18 +454,58 @@ export function GraphCanvas({
         linkDirectionalParticleSpeed={0.004}
         linkDirectionalParticleWidth={2}
         linkDirectionalParticleColor={(_l) => 'rgba(59, 130, 246, 0.6)'}
-        d3VelocityDecay={0.3} // Moderate decay for stable but responsive simulation
-        warmupTicks={100} // Reduced warmup since we have initial positions
-        cooldownTicks={200} // Moderate cooldown for stability
-        d3AlphaMin={0.01} // Standard alpha minimum
-        d3AlphaDecay={0.03} // Standard alpha decay
+        d3VelocityDecay={0.5} // Quick stabilization
+        warmupTicks={20} // Fast initial positioning
+        cooldownTicks={50} // Quick settling
+        d3AlphaMin={0.01} // Stop simulation sooner
+        d3AlphaDecay={0.05} // Faster decay
         enableNodeDrag={true}
         enableZoomInteraction={true}
         enablePanInteraction={true}
         enablePointerInteraction={true}
         minZoom={0.1}
         maxZoom={8}
+        onZoom={(evt: any) => {
+          if (evt && evt.k) setCurrentZoom(evt.k);
+        }}
       />
+      
+      {/* Zoom Controls */}
+      <div className="absolute bottom-4 right-4 flex flex-col gap-1 bg-background/95 backdrop-blur-sm rounded-lg p-1 border shadow-lg">
+        <button
+          onClick={handleZoomIn}
+          className="p-2 hover:bg-muted rounded transition-colors"
+          title="Yakınlaştır (Zoom In)"
+          aria-label="Yakınlaştır"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+            <line x1="11" y1="8" x2="11" y2="14" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+        </button>
+        <button
+          onClick={handleZoomReset}
+          className="p-2 hover:bg-muted rounded transition-colors text-xs font-medium min-w-[60px]"
+          title="Zoom Sıfırla (Reset Zoom)"
+          aria-label="Zoom Sıfırla"
+        >
+          {Math.round(currentZoom * 100)}%
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="p-2 hover:bg-muted rounded transition-colors"
+          title="Uzaklaştır (Zoom Out)"
+          aria-label="Uzaklaştır"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }

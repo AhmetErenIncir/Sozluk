@@ -14,8 +14,18 @@ export class MockDataSource implements DataSource {
   private static readonly mockData: Record<string, string[]> = {
     // Books and literature
     kitap: ['roman', 'öykü', 'şiir', 'yazı', 'yazar', 'okuma', 'kütüphane', 'sayfa', 'kağıt', 'basım', 'edebiyat', 'hikaye', 'ders', 'bilgi', 'öğrenim'],
+    bilgi: ['öğrenme', 'veri', 'kitap', 'ders', 'eğitim', 'okuma', 'araştırma', 'deneyim', 'anlama', 'zeka', 'bellek', 'kaynak', 'kütüphane'],
+    kütüphane: ['kitap', 'okuma', 'bilgi', 'araştırma', 'öğrenme', 'kaynak', 'ders', 'sessizlik', 'çalışma', 'raf', 'arşiv'],
+    öğrenim: ['eğitim', 'okul', 'ders', 'öğrenme', 'kitap', 'bilgi', 'gelişim', 'öğrenci', 'öğretmen', 'diploma'],
     roman: ['kitap', 'yazar', 'karakter', 'hikaye', 'edebiyat', 'okuma', 'kurgu', 'anlatı', 'sayfa', 'bölüm', 'kahraman', 'olay', 'tema', 'stil'],
     yazar: ['kitap', 'roman', 'yazmak', 'kalem', 'hikaye', 'şiir', 'edebiyat', 'metin', 'kelime', 'cümle', 'düşünce', 'sanat', 'yaratıcılık'],
+    öykü: ['hikaye', 'anlatı', 'kitap', 'yazar', 'kısa', 'edebiyat', 'kurgu', 'karakter', 'olay', 'roman'],
+    şiir: ['dize', 'kafiye', 'ritim', 'edebiyat', 'sanat', 'duygu', 'yazar', 'kitap', 'anlam', 'ses'],
+    hikaye: ['öykü', 'anlatı', 'masal', 'roman', 'kitap', 'karakter', 'olay', 'kurgu', 'yazar', 'edebiyat'],
+    edebiyat: ['sanat', 'kitap', 'roman', 'şiir', 'öykü', 'yazar', 'kültür', 'dil', 'eleştiri', 'akım'],
+    sayfa: ['kitap', 'kağıt', 'yazı', 'numara', 'çevirmek', 'okuma', 'basım', 'metin'],
+    kağıt: ['sayfa', 'yazı', 'kalem', 'kitap', 'beyaz', 'basım', 'ağaç', 'defter'],
+    basım: ['kitap', 'matbaa', 'yayın', 'baskı', 'kağıt', 'mürekkep', 'sayfa'],
 
     // Writing and language
     yazmak: ['yazar', 'kalem', 'kağıt', 'kelime', 'cümle', 'metin', 'yazı', 'harf', 'düşünce', 'ifade', 'anlatım', 'dil'],
@@ -63,6 +73,18 @@ export class MockDataSource implements DataSource {
     yağmur: ['su', 'bulut', 'gökyüzü', 'serinlik', 'temizlik', 'büyüme', 'şemsiye', 'ses', 'koku'],
     kar: ['beyaz', 'soğuk', 'kış', 'temiz', 'sessizlik', 'güzel', 'yumuşak', 'çocuk', 'oyun'],
 
+    // Additional common words
+    yazı: ['kalem', 'kağıt', 'metin', 'harf', 'kelime', 'yazmak', 'kitap', 'ifade', 'anlatım'],
+    kalem: ['yazmak', 'yazı', 'kağıt', 'mürekkep', 'defter', 'çizmek', 'silgi', 'okul'],
+    defter: ['yazı', 'kalem', 'sayfa', 'not', 'okul', 'ödev', 'kağıt', 'kapak'],
+    
+    // Information and knowledge
+    veri: ['bilgi', 'sayı', 'istatistik', 'analiz', 'bilgisayar', 'depolama', 'işlem'],
+    araştırma: ['bilgi', 'inceleme', 'deneme', 'bilim', 'sonuç', 'yöntem', 'kaynak'],
+    deneyim: ['yaşam', 'öğrenme', 'bilgi', 'tecrübe', 'olay', 'anı', 'gelişim'],
+    bellek: ['hafıza', 'anı', 'hatırlamak', 'unutmak', 'beyin', 'bilgi', 'öğrenme'],
+    kaynak: ['bilgi', 'kitap', 'referans', 'araştırma', 'su', 'enerji', 'doğal'],
+    
     // Default fallbacks
     sözlük: ['kelime', 'anlam', 'dil', 'kitap', 'öğrenme', 'bilgi', 'çeviri', 'açıklama'],
   };

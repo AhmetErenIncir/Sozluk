@@ -116,7 +116,7 @@ export function GraphView({ initialWord = 'kitap', className }: GraphViewProps) 
             onNodeClick={handleNodeClick}
             width={graphWidth}
             height={graphHeight}
-            linkDistance={150}
+            linkDistance={80}
           />
         ) : (
           <div className="flex items-center justify-center h-full">
@@ -148,12 +148,13 @@ export function GraphView({ initialWord = 'kitap', className }: GraphViewProps) 
           </div>
         )}
 
-        {/* Graph Instructions */}
-        <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 border text-xs text-muted-foreground max-w-xs">
+        {/* Graph Instructions - moved to top-right to avoid overlap with zoom controls */}
+        <div className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 border text-xs text-muted-foreground max-w-xs">
           <div className="font-medium mb-1">Nasıl Kullanılır:</div>
           <ul className="space-y-1">
             <li>• Kelimeye tıklayarak merkez yapın</li>
             <li>• Fare tekerleği ile yakınlaştırın</li>
+            <li>• Zoom butonları ile yakınlaştırın</li>
             <li>• Sürükleyerek grafi hareket ettirin</li>
             <li>• Node'ları sürükleyerek konumlandırın</li>
           </ul>

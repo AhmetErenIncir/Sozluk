@@ -92,25 +92,23 @@ function pruneGraph(
 function generateInitialPositions(
   centerNode: string,
   relatedNodes: string[],
-  existingNodes: Map<string, WordNode>
+  existingNodes: Map<string, WordNode>,
+  forceReposition: boolean = false
 ): Map<string, { x: number; y: number }> {
   const positions = new Map<string, { x: number; y: number }>();
   
-  // Center node at origin if it doesn't have a position
-  const centerExisting = existingNodes.get(centerNode);
-  if (!centerExisting || centerExisting.x === undefined || centerExisting.y === undefined) {
-    positions.set(centerNode, { x: 0, y: 0 });
-  }
+  // Always position center node at origin
+  positions.set(centerNode, { x: 0, y: 0 });
   
   // Arrange related nodes in a circle around center
-  const radius = 150; // Initial radius for circular layout
+  const radius = 120; // Better spacing for larger nodes
   const angleStep = (2 * Math.PI) / Math.max(1, relatedNodes.length);
   
   relatedNodes.forEach((nodeId, index) => {
     const existing = existingNodes.get(nodeId);
-    // Only set position if node doesn't already have one
-    if (!existing || existing.x === undefined || existing.y === undefined) {
-      const angle = index * angleStep;
+    // When center changes, reposition all nodes for better layout
+    if (forceReposition || !existing || existing.x === undefined || existing.y === undefined) {
+      const angle = index * angleStep - Math.PI / 2; // Start from top
       positions.set(nodeId, {
         x: Math.cos(angle) * radius,
         y: Math.sin(angle) * radius
@@ -161,16 +159,16 @@ function mergeGraphData(
     .map(word => normalizeWord(word))
     .filter(id => id !== centerId);
   
-  const initialPositions = generateInitialPositions(centerId, relatedNodeIds, nodeMap);
+  // Force reposition when we have a new center
+  const forceReposition = !nodeMap.get(centerId)?.isCenter;
+  const initialPositions = generateInitialPositions(centerId, relatedNodeIds, nodeMap, forceReposition);
   
-  // Apply initial positions to nodes that need them
+  // Apply initial positions to nodes
   initialPositions.forEach((pos, nodeId) => {
     if (nodeMap.has(nodeId)) {
       const node = nodeMap.get(nodeId)!;
-      if (node.x === undefined || node.y === undefined) {
-        node.x = pos.x;
-        node.y = pos.y;
-      }
+      node.x = pos.x;
+      node.y = pos.y;
     }
   });
 
@@ -280,39 +278,25 @@ export const useGraphStore = create<GraphStore>()(
         try {
           const data = await dataSource.fetchWord(normalizedWord);
 
-          // Update all nodes to not be center
-          const updatedNodes = state.nodes.map(node => ({
-            ...node,
-            isCenter: false,
-          }));
-
-          // Merge new data with existing graph
+          // Start fresh with just the new center and its relationships
+          // This provides a clean, Visual Thesaurus-like experience
           const { nodes, links } = mergeGraphData(
-            updatedNodes,
-            [...state.links],
+            [],
+            [],
             data,
             normalizedWord,
             state.maxRelatedPerNode
           );
-
-          // Prune if necessary
-          const { nodes: prunedNodes, links: prunedLinks } = pruneGraph(
-            nodes,
-            links,
-            normalizedWord,
-            [...state.history, normalizedWord],
-            state.maxNodes
-          );
-
+          
           // Mark visited nodes
-          const finalNodes = prunedNodes.map(node => ({
+          const finalNodes = nodes.map(node => ({
             ...node,
-            isVisited: state.visitedCenters[node.id] || node.id === normalizedWord,
+            isVisited: state.visitedCenters[node.id] || false,
           }));
-
+          
           set({
             nodes: finalNodes,
-            links: prunedLinks,
+            links,
             centerId: normalizedWord,
             history: [...state.history, normalizedWord],
             visitedCenters: { ...state.visitedCenters, [normalizedWord]: true },
